@@ -4,6 +4,7 @@ package generator
 
 import (
 	"fmt"
+	"sort"
 
 	ggdescriptor "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
 	"google.golang.org/protobuf/compiler/protogen"
@@ -38,32 +39,47 @@ func Generate(plugin *protogen.Plugin, opts *Options) error {
 		emitted[name] = &generatedFile{name: name, content: content}
 	}
 
+	emitAll := func(enc *GenericTemplateBasedEncoder) error {
+		tmpls, err := enc.Files()
+		if err != nil {
+			return err
+		}
+		for _, tmpl := range tmpls {
+			emit(tmpl.GetName(), tmpl.GetContent())
+		}
+		return nil
+	}
+
 	for _, file := range req.GetProtoFile() {
 		switch {
 		case opts.All:
-			enc := NewGenericTemplateBasedEncoder(opts.TemplateDir, file, opts.Debug, opts.DestinationDir)
-			for _, tmpl := range enc.Files() {
-				emit(tmpl.GetName(), tmpl.GetContent())
+			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file, opts.Debug, opts.DestinationDir)); err != nil {
+				return err
 			}
 		case opts.FileMode:
 			if len(file.GetService()) == 0 {
 				continue
 			}
-			enc := NewGenericTemplateBasedEncoder(opts.TemplateDir, file, opts.Debug, opts.DestinationDir)
-			for _, tmpl := range enc.Files() {
-				emit(tmpl.GetName(), tmpl.GetContent())
+			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file, opts.Debug, opts.DestinationDir)); err != nil {
+				return err
 			}
 		default:
 			for _, service := range file.GetService() {
-				enc := NewGenericServiceTemplateBasedEncoder(opts.TemplateDir, service, file, opts.Debug, opts.DestinationDir)
-				for _, tmpl := range enc.Files() {
-					emit(tmpl.GetName(), tmpl.GetContent())
+				if err := emitAll(NewGenericServiceTemplateBasedEncoder(opts.TemplateDir, service, file, opts.Debug, opts.DestinationDir)); err != nil {
+					return err
 				}
 			}
 		}
 	}
 
-	for _, gf := range emitted {
+	names := make([]string, 0, len(emitted))
+	for name := range emitted {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		gf := emitted[name]
 		out := plugin.NewGeneratedFile(gf.name, "")
 		if _, err := out.Write([]byte(gf.content)); err != nil {
 			return fmt.Errorf("write %q: %w", gf.name, err)

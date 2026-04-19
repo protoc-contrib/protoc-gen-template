@@ -2,11 +2,11 @@ package generator
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 	"time"
 
@@ -27,7 +27,6 @@ type Ast struct {
 	BuildDate      time.Time                          `json:"build-date"`
 	BuildHostname  string                             `json:"build-hostname"`
 	BuildUser      string                             `json:"build-user"`
-	GoPWD          string                             `json:"go-pwd,omitempty"`
 	PWD            string                             `json:"pwd"`
 	Debug          bool                               `json:"debug"`
 	DestinationDir string                             `json:"destination-dir"`
@@ -110,22 +109,11 @@ func (e *GenericTemplateBasedEncoder) genAst(templateFilename string) (*Ast, err
 	if err != nil {
 		return nil, err
 	}
-	goPwd := ""
-	if os.Getenv("GOPATH") != "" {
-		goPwd, err = filepath.Rel(os.Getenv("GOPATH")+"/src", pwd)
-		if err != nil {
-			return nil, err
-		}
-		if strings.Contains(goPwd, "../") {
-			goPwd = ""
-		}
-	}
 	ast := Ast{
 		BuildDate:      time.Now(),
 		BuildHostname:  hostname,
 		BuildUser:      os.Getenv("USER"),
 		PWD:            pwd,
-		GoPWD:          goPwd,
 		File:           e.file,
 		TemplateDir:    e.templateDir,
 		DestinationDir: e.destinationDir,
@@ -177,39 +165,24 @@ func (e *GenericTemplateBasedEncoder) buildContent(templateFilename string) (str
 	return buffer.String(), ast.Filename, nil
 }
 
-func (e *GenericTemplateBasedEncoder) Files() []*plugin_go.CodeGeneratorResponse_File {
+func (e *GenericTemplateBasedEncoder) Files() ([]*plugin_go.CodeGeneratorResponse_File, error) {
 	templates, err := e.templates()
 	if err != nil {
-		log.Fatalf("cannot get templates from %q: %v", e.templateDir, err)
+		return nil, fmt.Errorf("walk templates in %q: %w", e.templateDir, err)
 	}
 
-	length := len(templates)
-	files := make([]*plugin_go.CodeGeneratorResponse_File, 0, length)
-	errChan := make(chan error, length)
-	resultChan := make(chan *plugin_go.CodeGeneratorResponse_File, length)
+	files := make([]*plugin_go.CodeGeneratorResponse_File, 0, len(templates))
 	for _, templateFilename := range templates {
-		go func(tmpl string) {
-			var translatedFilename, content string
-			content, translatedFilename, err = e.buildContent(tmpl)
-			if err != nil {
-				errChan <- err
-				return
-			}
-			filename := translatedFilename[:len(translatedFilename)-len(".tmpl")]
-
-			resultChan <- &plugin_go.CodeGeneratorResponse_File{
-				Content: &content,
-				Name:    &filename,
-			}
-		}(templateFilename)
-	}
-	for i := 0; i < length; i++ {
-		select {
-		case f := <-resultChan:
-			files = append(files, f)
-		case err = <-errChan:
-			panic(err)
+		content, translatedFilename, err := e.buildContent(templateFilename)
+		if err != nil {
+			return nil, fmt.Errorf("render %q: %w", templateFilename, err)
 		}
+		filename := translatedFilename[:len(translatedFilename)-len(".tmpl")]
+
+		files = append(files, &plugin_go.CodeGeneratorResponse_File{
+			Content: &content,
+			Name:    &filename,
+		})
 	}
-	return files
+	return files, nil
 }

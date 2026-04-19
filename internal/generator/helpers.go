@@ -55,18 +55,6 @@ var ProtoHelpersFuncMap = template.FuncMap{
 		}
 		return r
 	},
-	"first": func(a []string) string {
-		return a[0]
-	},
-	"last": func(a []string) string {
-		return a[len(a)-1]
-	},
-	"concat": func(a string, b ...string) string {
-		return strings.Join(append([]string{a}, b...), "")
-	},
-	"join": func(sep string, a ...string) string {
-		return strings.Join(a, sep)
-	},
 	"upperFirst": func(s string) string {
 		return strings.ToUpper(s[:1]) + s[1:]
 	},
@@ -297,13 +285,6 @@ func samePath(a, b []int32) bool {
 	}
 	return true
 }
-
-/*func findSourceInfoLocation(i interface{}) *descriptor.SourceCodeInfo_Location {
-	if pathMap == nil {
-		return nil
-	}
-	return pathMap[i]
-}*/
 
 func leadingComment(i interface{}) string {
 	loc := pathMap[i]
@@ -772,7 +753,8 @@ func goTypeWithEmbedded(pkg string, f *descriptor.FieldDescriptorProto, p *descr
 	}
 }
 
-//Deprecated. Instead use goTypeWithEmbedded
+// goType returns the Go type for a field, not accounting for embedded
+// message types. See goTypeWithEmbedded for the embedded-aware variant.
 func goType(pkg string, f *descriptor.FieldDescriptorProto) string {
 	if pkg != "" {
 		pkg = pkg + "."
