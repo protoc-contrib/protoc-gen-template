@@ -1,4 +1,4 @@
-module moul.io/protoc-gen-gotemplate
+module github.com/protoc-contrib/protoc-gen-go-template
 
 require (
 	github.com/Masterminds/goutils v1.1.0 // indirect

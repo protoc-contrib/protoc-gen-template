@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	oldcontext "golang.org/x/net/context"
-	pb "moul.io/protoc-gen-gotemplate/examples/go-kit/services/sprint/gen/pb"
+	pb "github.com/protoc-contrib/protoc-gen-go-template/examples/go-kit/services/sprint/gen/pb"
 )
 
 var _ = endpoint.Chain

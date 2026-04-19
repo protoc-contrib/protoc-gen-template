@@ -1,7 +1,7 @@
 .PHONY: build
 build:
 	mkdir -p output
-	protoc -I. --gotemplate_out=template_dir=.,debug=true:. *.proto
+	protoc -I. --go-template_out=template_dir=.,debug=true:. *.proto
 
 
 .PHONY: re

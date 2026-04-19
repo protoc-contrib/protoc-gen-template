@@ -1,4 +1,4 @@
-# `protoc-gen-gotemplate`
+# `protoc-gen-go-template`
 :open_file_folder: protocol generator + golang text/template (protobuf)
 
 A generic **code**/script/data generator based on [Protobuf](https://developers.google.com/protocol-buffers/).
@@ -27,13 +27,13 @@ The plugin parses **protobuf** files, generates an **ast**, and walks a local **
 
 ## Web editor
 
-![Web editor screenshot](https://github.com/moul/protoc-gen-gotemplate/raw/master/assets/web-editor.jpg)
+![Web editor screenshot](https://github.com/protoc-contrib/protoc-gen-go-template/raw/master/assets/web-editor.jpg)
 
-[Demo server](http://protoc-gen-gotemplate.m.42.am/)
+[Demo server](http://protoc-gen-go-template.m.42.am/)
 
 ## Usage
 
-`protoc-gen-gotemplate` requires a **template_dir** directory *(by default `./templates`)*.
+`protoc-gen-go-template` requires a **template_dir** directory *(by default `./templates`)*.
 
 Every file ending with `.tmpl` will be processed and written to the destination folder, following the file hierarchy of the `template_dir`, and remove the `.tmpl` extension.
 
@@ -42,7 +42,7 @@ Every file ending with `.tmpl` will be processed and written to the destination 
 ```console
 $> ls -R
 input.proto     templates/doc.txt.tmpl      templates/config.json.tmpl
-$> protoc --gotemplate_out=. input.proto
+$> protoc --go-template_out=. input.proto
 $> ls -R
 input.proto     templates/doc.txt.tmpl      templates/config.json.tmpl
 doc.txt         config.json
@@ -53,7 +53,7 @@ doc.txt         config.json
 You can specify custom options, as follow:
 
 ```console
-$> protoc --gotemplate_out=debug=true,template_dir=/path/to/template/directory:. input.proto
+$> protoc --go-template_out=debug=true,template_dir=/path/to/template/directory:. input.proto
 ```
 
 | Option                | Default Value | Accepted Values           | Description
@@ -137,20 +137,20 @@ See the project helpers for the complete list.
 
 * Install the **Go** compiler and tools from https://golang.org/doc/install
 * Install **protobuf**: `go install github.com/golang/protobuf/protoc-gen-go@latest`
-* Install **protoc-gen-gotemplate**: `go install moul.io/protoc-gen-gotemplate@latest`
+* Install **protoc-gen-go-template**: `go install github.com/protoc-contrib/protoc-gen-go-template@latest`
 
 ## Docker
 
-* automated docker hub build: [https://hub.docker.com/r/moul/protoc-gen-gotemplate/](https://hub.docker.com/r/moul/protoc-gen-gotemplate/)
+* automated docker hub build: [https://hub.docker.com/r/protoc-contrib/protoc-gen-go-template/](https://hub.docker.com/r/protoc-contrib/protoc-gen-go-template/)
 * Based on [http://github.com/znly/protoc](http://github.com/znly/protoc)
 
 Usage:
 
 ```console
-$> docker run --rm -v "$(pwd):$(pwd)" -w "$(pwd)" moul/protoc-gen-gotemplate -I. --gotemplate_out=./output/ ./*.proto
+$> docker run --rm -v "$(pwd):$(pwd)" -w "$(pwd)" protoc-contrib/protoc-gen-go-template -I. --go-template_out=./output/ ./*.proto
 ```
 
-## Projects using `protoc-gen-gotemplate`
+## Projects using `protoc-gen-go-template`
 
 * [kafka-gateway](https://github.com/moul/kafka-gateway/): Kafka gateway/proxy (gRPC + http) using Go-Kit
 * [translator](https://github.com/moul/translator): Translator Micro-service using Gettext and Go-Kit
@@ -159,6 +159,16 @@ $> docker run --rm -v "$(pwd):$(pwd)" -w "$(pwd)" moul/protoc-gen-gotemplate -I.
 ## See also
 
 * [pbhbs](https://github.com/gponsinet/pbhbs): protobuf gen based on handlebarjs template
+
+## Credits
+
+This project is a continuation of [moul/protoc-gen-gotemplate](https://github.com/moul/protoc-gen-gotemplate) by Manfred Touron and contributors, republished under the `protoc-contrib` org and renamed to `protoc-gen-go-template` to align with common protoc plugin naming conventions. Original git history is preserved; see `AUTHORS` for the full contributor list.
+
+### Migrating from `protoc-gen-gotemplate`
+
+* Binary renamed: `protoc-gen-gotemplate` → `protoc-gen-go-template`
+* Protoc flag renamed: `--gotemplate_out` → `--go-template_out`
+* Install path: `go install github.com/protoc-contrib/protoc-gen-go-template@latest`
 
 ## License
 

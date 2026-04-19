@@ -1,11 +1,11 @@
-// file generated with protoc-gen-gotemplate
+// file generated with protoc-gen-go-template
 package bbb
 
 import (
 	"fmt"
 
 	"golang.org/x/net/context"
-	"moul.io/protoc-gen-gotemplate/examples/single-package-mode/output/aaa"
+	"github.com/protoc-contrib/protoc-gen-go-template/examples/single-package-mode/output/aaa"
 )
 
 type Service struct{}

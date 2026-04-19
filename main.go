@@ -1,4 +1,4 @@
-package main // import "moul.io/protoc-gen-gotemplate"
+package main // import "github.com/protoc-contrib/protoc-gen-go-template"
 
 import (
 	"io/ioutil"
@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"                   // nolint:staticcheck
 	"github.com/golang/protobuf/protoc-gen-go/generator" // nolint:staticcheck
 
-	pgghelpers "moul.io/protoc-gen-gotemplate/helpers"
+	pgghelpers "github.com/protoc-contrib/protoc-gen-go-template/helpers"
 )
 
 func main() {

@@ -1,1 +1,1 @@
-module moul.io/protoc-gen-gotemplates/example
+module github.com/protoc-contrib/protoc-gen-go-template/examples

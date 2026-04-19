@@ -50,7 +50,7 @@ func generate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate
-	cmd := exec.Command("protoc", "-I"+dir, "--gotemplate_out=template_dir="+dir+",debug=true:"+dir, filepath.Join(dir, "example.proto")) // #nosec
+	cmd := exec.Command("protoc", "-I"+dir, "--go-template_out=template_dir="+dir+",debug=true:"+dir, filepath.Join(dir, "example.proto")) // #nosec
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		returnError(w, errors.New(string(out)))

@@ -7,4 +7,4 @@ build: $(TARGETS_K8S)
 
 $(TARGETS_K8S): %_k8s:
 	@mkdir -p $(dir $*)gen
-	protoc $(PROTOC_OPTS) --gotemplate_out=debug=true,template_dir=./templates:$(dir $*)gen "$*"
+	protoc $(PROTOC_OPTS) --go-template_out=debug=true,template_dir=./templates:$(dir $*)gen "$*"

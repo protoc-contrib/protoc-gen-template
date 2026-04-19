@@ -7,8 +7,8 @@ import (
 	grpctransport "github.com/go-kit/kit/transport/grpc"
 	oldcontext "golang.org/x/net/context"
 
-	endpoints "moul.io/protoc-gen-gotemplate/examples/go-kit/services/user/gen/endpoints"
-	pb "moul.io/protoc-gen-gotemplate/examples/go-kit/services/user/gen/pb"
+	endpoints "github.com/protoc-contrib/protoc-gen-go-template/examples/go-kit/services/user/gen/endpoints"
+	pb "github.com/protoc-contrib/protoc-gen-go-template/examples/go-kit/services/user/gen/pb"
 )
 
 // avoid import errors
