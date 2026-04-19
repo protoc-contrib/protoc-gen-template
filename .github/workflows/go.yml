@@ -30,37 +30,37 @@ jobs:
   goreleaser-dryrun:
     strategy:
       matrix:
-        golang: [1.16.x]
+        golang: [1.23.x]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang }}
       - name: Cache Go modules
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key:          ${{ runner.os }}-go-${{ matrix.golang }}-v1-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ matrix.golang }}-v1-
       - name: Run GoReleaser (Dry Run)
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
-          args: release --rm-dist --snapshot --skip-publish
+          args: release --clean --snapshot --skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   golangci-lint:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        golangci_lint: [v1.38]
+        golangci_lint: [v1.60]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2.5.2
+        uses: golangci/golangci-lint-action@v6
         with:
           version: ${{ matrix.golangci_lint }}
           #github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -72,11 +72,11 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        golang: [1.16.x]
+        golang: [1.23.x]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang }}
       - name: Run tests on Windows
@@ -87,17 +87,17 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        golang: [1.16.x]
+        golang: [1.23.x]
     env:
       OS: macos-latest
       GOLANG: ${{ matrix.golang }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key:          ${{ runner.os }}-go-${{ matrix.golang }}-v1-${{ hashFiles('**/go.sum') }}
@@ -112,7 +112,7 @@ jobs:
           git --no-pager diff go.mod go.sum
           git --no-pager diff --quiet go.mod go.sum
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           #token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.txt
@@ -126,19 +126,18 @@ jobs:
     strategy:
       matrix:
         golang:
-          - 1.14.x
-          - 1.15.x
-          - 1.16.x
+          - 1.22.x
+          - 1.23.x
     env:
       OS: ubuntu-latest
       GOLANG: ${{ matrix.golang }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key:          ${{ runner.os }}-go-${{ matrix.golang }}-v1-${{ hashFiles('**/go.sum') }}
@@ -153,7 +152,7 @@ jobs:
       - name: Run tests on Unix-like operating systems
         run: make unittest
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           #token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.txt

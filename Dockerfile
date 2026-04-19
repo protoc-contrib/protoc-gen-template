@@ -1,18 +1,14 @@
 # builder
-FROM    golang:1.16-alpine as builder
-RUN     apk --no-cache add make git go rsync libc-dev
-RUN     go get -u golang.org/x/tools/cmd/goimports
-RUN     go get -u github.com/gobuffalo/packr/v2/packr2
-COPY    . /go/src/github.com/protoc-contrib/protoc-gen-go-template
-WORKDIR /go/src/github.com/protoc-contrib/protoc-gen-go-template
-RUN     packr2
-RUN     go install -a -tags netgo -ldflags '-w -extldflags "-static"' . ./cmd/web-editor
-RUN     ls -la /go/bin
+FROM    golang:1.23-alpine AS builder
+RUN     apk --no-cache add make git rsync libc-dev
+WORKDIR /src
+COPY    go.mod go.sum ./
+RUN     go mod download
+COPY    . .
+RUN     CGO_ENABLED=0 go install -tags netgo -ldflags '-w -s' .
 
 # runtime
 FROM    znly/protoc:0.4.0
-COPY    --from=builder  /go/bin/web-editor            /go/bin/
 COPY    --from=builder  /go/bin/protoc-gen-go-template /go/bin/
 ENV     PATH=$PATH:/go/bin
-EXPOSE  8080
 ENTRYPOINT []

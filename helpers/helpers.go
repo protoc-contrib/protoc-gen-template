@@ -9,7 +9,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/golang/protobuf/proto" // nolint:staticcheck
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	ggdescriptor "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"

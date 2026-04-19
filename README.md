@@ -25,12 +25,6 @@ The plugin parses **protobuf** files, generates an **ast**, and walks a local **
 ## Dev helpers
 1. Pre-commit script for install: https://pre-commit.com
 
-## Web editor
-
-![Web editor screenshot](https://github.com/protoc-contrib/protoc-gen-go-template/raw/master/assets/web-editor.jpg)
-
-[Demo server](http://protoc-gen-go-template.m.42.am/)
-
 ## Usage
 
 `protoc-gen-go-template` requires a **template_dir** directory *(by default `./templates`)*.
