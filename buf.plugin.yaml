@@ -1,8 +1,0 @@
-version: v1
-name: buf.build/protoc-contrib/go-template
-plugin_version: v2.6.0
-source_url: https://github.com/protoc-contrib/protoc-gen-go-template
-description: Generic protoc plugin that renders files from Go text/template.
-spdx_license_id: MIT
-output_languages:
-  - go

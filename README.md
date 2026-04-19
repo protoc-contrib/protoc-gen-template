@@ -144,28 +144,6 @@ Usage:
 $> docker run --rm -v "$(pwd):$(pwd)" -w "$(pwd)" protoc-contrib/protoc-gen-go-template -I. --go-template_out=./output/ ./*.proto
 ```
 
-## Buf plugin
-
-`protoc-gen-go-template` is published as a [Buf](https://buf.build) remote plugin at
-`buf.build/protoc-contrib/go-template`, so it can be invoked from `buf generate`
-without a local install.
-
-Example `buf.gen.yaml`:
-
-```yaml
-version: v2
-plugins:
-  - remote: buf.build/protoc-contrib/go-template
-    out: gen
-    opt:
-      - template_dir=./templates
-      - destination_dir=gen
-```
-
-The plugin definition lives at [`buf.plugin.yaml`](./buf.plugin.yaml); the
-container image consumed by `buf.build` is built from
-[`Dockerfile.buf`](./Dockerfile.buf).
-
 ## Projects using `protoc-gen-go-template`
 
 * [kafka-gateway](https://github.com/moul/kafka-gateway/): Kafka gateway/proxy (gRPC + http) using Go-Kit
