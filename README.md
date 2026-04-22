@@ -39,27 +39,25 @@ release pipeline runs on Nix + `release-please`.
   (`getMessageType`, `isFieldMessage`, `fieldMapKeyType`, ...), HTTP
   annotation accessors (`httpPath`, `httpVerb`, `httpBody`, ...), and
   extension readers (`stringFieldExtension`, `boolFieldExtension`, ...).
-- **Service-scoped or file-scoped iteration** — default mode renders the
-  template set once per gRPC service; `file-mode` renders once per file
-  that declares a service; `all` renders every proto file whether or not
-  it declares a service.
-- **Cross-file lookups** — `single-package-mode` loads the full request
-  into a `grpc-gateway` registry so templates can resolve messages across
-  imports.
+- **Flexible iteration** — `mode=service` (default) renders once per gRPC
+  service; `mode=file` renders once per file that declares a service;
+  `mode=all` renders every proto file whether or not it declares a service.
+- **Cross-file lookups** — `registry=true` loads the full request into a
+  `grpc-gateway` registry so templates can resolve messages across imports.
+- **Structured logging** — the plugin emits `slog.Debug` events; enable
+  them by configuring your slog handler's minimum level (e.g. `GOTOOLCHAIN` or
+  a custom handler).
 
 ## Options
 
 Pass plugin options via `--template_opt=key=value` (protoc) or the
 `opt:` list under the plugin entry in `buf.gen.yaml`.
 
-| Option                | Default      | Effect                                                                                 |
-| --------------------- | ------------ | -------------------------------------------------------------------------------------- |
-| `template_dir`        | `./template` | Root directory containing `.tmpl` files.                                               |
-| `destination_dir`     | `.`          | Base path written into each output file name.                                          |
-| `debug`               | `false`      | Verbose template-engine logging.                                                       |
-| `all`                 | `false`      | Run templates against every proto file, not only those that define services.           |
-| `single-package-mode` | `false`      | Load the full request into a grpc-gateway registry for cross-file message lookups.     |
-| `file-mode`           | `false`      | Run templates once per file (that declares a service) rather than per service.         |
+| Option         | Default      | Effect                                                                                                                           |
+| -------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `template_dir` | `./template` | Root directory containing `.tmpl` files.                                                                                         |
+| `mode`         | `service`    | Iteration granularity: `service` (once per service), `file` (once per file that has a service), `all` (every file, no filter).   |
+| `registry`     | `false`      | Load the full request into a grpc-gateway registry so templates can resolve cross-file message references.                       |
 
 ## Installation
 
@@ -130,18 +128,16 @@ per-invocation metadata:
 
 ```go
 type Ast struct {
-    File           *descriptorpb.FileDescriptorProto
-    Service        *descriptorpb.ServiceDescriptorProto
-    Enum           []*descriptorpb.EnumDescriptorProto
-    TemplateDir    string
-    DestinationDir string
-    RawFilename    string
-    Filename       string
-    PWD            string
-    BuildDate      time.Time
-    BuildHostname  string
-    BuildUser      string
-    Debug          bool
+    File          *descriptorpb.FileDescriptorProto
+    Service       *descriptorpb.ServiceDescriptorProto
+    Enum          []*descriptorpb.EnumDescriptorProto
+    TemplateDir   string
+    RawFilename   string
+    Filename      string
+    PWD           string
+    BuildDate     time.Time
+    BuildHostname string
+    BuildUser     string
 }
 ```
 

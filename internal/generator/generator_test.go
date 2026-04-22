@@ -108,7 +108,7 @@ var _ = Describe("generator.Generate", func() {
 		Expect(outputNames(plugin)).To(BeEmpty())
 	})
 
-	It("renders even service-less files when All is set", func() {
+	It("renders even service-less files with mode=all", func() {
 		writeTemplate(tmplDir, "doc.txt.tmpl", `pkg={{.File.Package}}`)
 
 		plugin := newPlugin(
@@ -118,14 +118,14 @@ var _ = Describe("generator.Generate", func() {
 
 		Expect(generator.Generate(plugin, &generator.Options{
 			TemplateDir: tmplDir,
-			All:         true,
+			Mode:        generator.ModeAll,
 		})).To(Succeed())
 
 		Expect(outputNames(plugin)).To(ConsistOf("doc.txt"))
 		Expect(outputByName(plugin, "doc.txt")).To(Equal("pkg=demo"))
 	})
 
-	It("renders once per file in FileMode even when the file defines multiple services", func() {
+	It("renders once per file with mode=file even when the file defines multiple services", func() {
 		writeTemplate(tmplDir, "file.txt.tmpl",
 			`n={{len .File.Service}}`)
 
@@ -136,14 +136,14 @@ var _ = Describe("generator.Generate", func() {
 
 		Expect(generator.Generate(plugin, &generator.Options{
 			TemplateDir: tmplDir,
-			FileMode:    true,
+			Mode:        generator.ModeFile,
 		})).To(Succeed())
 
 		Expect(outputNames(plugin)).To(ConsistOf("file.txt"))
 		Expect(outputByName(plugin, "file.txt")).To(Equal("n=2"))
 	})
 
-	It("skips files without services in FileMode", func() {
+	It("skips files without services with mode=file", func() {
 		writeTemplate(tmplDir, "file.txt.tmpl", `x`)
 
 		plugin := newPlugin(
@@ -153,7 +153,7 @@ var _ = Describe("generator.Generate", func() {
 
 		Expect(generator.Generate(plugin, &generator.Options{
 			TemplateDir: tmplDir,
-			FileMode:    true,
+			Mode:        generator.ModeFile,
 		})).To(Succeed())
 		Expect(outputNames(plugin)).To(BeEmpty())
 	})

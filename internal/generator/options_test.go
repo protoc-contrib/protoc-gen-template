@@ -19,29 +19,32 @@ var _ = Describe("Options.Set", func() {
 		Expect(opts.TemplateDir).To(Equal("/tmp/tmpl"))
 	})
 
-	It("accepts destination_dir", func() {
-		Expect(opts.Set("destination_dir", "gen")).To(Succeed())
-		Expect(opts.DestinationDir).To(Equal("gen"))
+
+	It("accepts registry=true", func() {
+		Expect(opts.Set("registry", "true")).To(Succeed())
+		Expect(opts.Registry).To(BeTrue())
 	})
 
-	DescribeTable("boolean flags",
-		func(name string, getter func(*generator.Options) bool) {
-			Expect(opts.Set(name, "true")).To(Succeed())
-			Expect(getter(opts)).To(BeTrue())
+	It("accepts registry=false", func() {
+		Expect(opts.Set("registry", "false")).To(Succeed())
+		Expect(opts.Registry).To(BeFalse())
+	})
 
-			opts2 := &generator.Options{}
-			Expect(opts2.Set(name, "false")).To(Succeed())
-			Expect(getter(opts2)).To(BeFalse())
-
-			opts3 := &generator.Options{}
-			Expect(opts3.Set(name, "t")).To(Succeed())
-			Expect(getter(opts3)).To(BeTrue())
+	DescribeTable("mode values",
+		func(value string, expected generator.Mode) {
+			Expect(opts.Set("mode", value)).To(Succeed())
+			Expect(opts.Mode).To(Equal(expected))
 		},
-		Entry("debug", "debug", func(o *generator.Options) bool { return o.Debug }),
-		Entry("all", "all", func(o *generator.Options) bool { return o.All }),
-		Entry("single-package-mode", "single-package-mode", func(o *generator.Options) bool { return o.SinglePackageMode }),
-		Entry("file-mode", "file-mode", func(o *generator.Options) bool { return o.FileMode }),
+		Entry("service", "service", generator.ModeService),
+		Entry("file", "file", generator.ModeFile),
+		Entry("all", "all", generator.ModeAll),
 	)
+
+	It("rejects unknown mode values", func() {
+		err := opts.Set("mode", "unknown")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("unknown mode"))
+	})
 
 	It("rejects unknown options", func() {
 		err := opts.Set("nope", "1")
@@ -50,7 +53,7 @@ var _ = Describe("Options.Set", func() {
 	})
 
 	It("rejects malformed booleans", func() {
-		err := opts.Set("debug", "yeah")
+		err := opts.Set("registry", "yeah")
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("invalid value"))
 	})

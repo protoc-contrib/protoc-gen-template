@@ -22,7 +22,7 @@ func Generate(plugin *protogen.Plugin, opts *Options) error {
 
 	req := plugin.Request
 
-	if opts.SinglePackageMode {
+	if opts.Registry {
 		reg := descriptor.NewRegistry()
 		SetRegistry(reg)
 		if err := reg.Load(req); err != nil {
@@ -51,21 +51,21 @@ func Generate(plugin *protogen.Plugin, opts *Options) error {
 	}
 
 	for _, file := range req.GetProtoFile() {
-		switch {
-		case opts.All:
-			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file, opts.Debug, opts.DestinationDir)); err != nil {
+		switch opts.Mode {
+		case ModeAll:
+			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file)); err != nil {
 				return err
 			}
-		case opts.FileMode:
+		case ModeFile:
 			if len(file.GetService()) == 0 {
 				continue
 			}
-			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file, opts.Debug, opts.DestinationDir)); err != nil {
+			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file)); err != nil {
 				return err
 			}
-		default:
+		default: // ModeService or ""
 			for _, service := range file.GetService() {
-				if err := emitAll(NewGenericServiceTemplateBasedEncoder(opts.TemplateDir, service, file, opts.Debug, opts.DestinationDir)); err != nil {
+				if err := emitAll(NewGenericServiceTemplateBasedEncoder(opts.TemplateDir, service, file)); err != nil {
 					return err
 				}
 			}

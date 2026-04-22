@@ -3,7 +3,7 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -15,12 +15,10 @@ import (
 )
 
 type GenericTemplateBasedEncoder struct {
-	templateDir    string
-	service        *descriptor.ServiceDescriptorProto
-	file           *descriptor.FileDescriptorProto
-	enum           []*descriptor.EnumDescriptorProto
-	debug          bool
-	destinationDir string
+	templateDir string
+	service     *descriptor.ServiceDescriptorProto
+	file        *descriptor.FileDescriptorProto
+	enum        []*descriptor.EnumDescriptorProto
 }
 
 type Ast struct {
@@ -28,8 +26,6 @@ type Ast struct {
 	BuildHostname  string                             `json:"build-hostname"`
 	BuildUser      string                             `json:"build-user"`
 	PWD            string                             `json:"pwd"`
-	Debug          bool                               `json:"debug"`
-	DestinationDir string                             `json:"destination-dir"`
 	File           *descriptor.FileDescriptorProto    `json:"file"`
 	RawFilename    string                             `json:"raw-filename"`
 	Filename       string                             `json:"filename"`
@@ -38,35 +34,27 @@ type Ast struct {
 	Enum           []*descriptor.EnumDescriptorProto  `json:"enum"`
 }
 
-func NewGenericServiceTemplateBasedEncoder(templateDir string, service *descriptor.ServiceDescriptorProto, file *descriptor.FileDescriptorProto, debug bool, destinationDir string) (e *GenericTemplateBasedEncoder) {
+func NewGenericServiceTemplateBasedEncoder(templateDir string, service *descriptor.ServiceDescriptorProto, file *descriptor.FileDescriptorProto) (e *GenericTemplateBasedEncoder) {
 	e = &GenericTemplateBasedEncoder{
-		service:        service,
-		file:           file,
-		templateDir:    templateDir,
-		debug:          debug,
-		destinationDir: destinationDir,
-		enum:           file.GetEnumType(),
+		service:     service,
+		file:        file,
+		templateDir: templateDir,
+		enum:        file.GetEnumType(),
 	}
-	if debug {
-		log.Printf("new encoder: file=%q service=%q template-dir=%q", file.GetName(), service.GetName(), templateDir)
-	}
+	slog.Debug("new encoder", "file", file.GetName(), "service", service.GetName(), "template-dir", templateDir)
 	InitPathMap(file)
 
 	return
 }
 
-func NewGenericTemplateBasedEncoder(templateDir string, file *descriptor.FileDescriptorProto, debug bool, destinationDir string) (e *GenericTemplateBasedEncoder) {
+func NewGenericTemplateBasedEncoder(templateDir string, file *descriptor.FileDescriptorProto) (e *GenericTemplateBasedEncoder) {
 	e = &GenericTemplateBasedEncoder{
-		service:        nil,
-		file:           file,
-		templateDir:    templateDir,
-		enum:           file.GetEnumType(),
-		debug:          debug,
-		destinationDir: destinationDir,
+		service:     nil,
+		file:        file,
+		templateDir: templateDir,
+		enum:        file.GetEnumType(),
 	}
-	if debug {
-		log.Printf("new encoder: file=%q template-dir=%q", file.GetName(), templateDir)
-	}
+	slog.Debug("new encoder", "file", file.GetName(), "template-dir", templateDir)
 	InitPathMap(file)
 
 	return
@@ -89,10 +77,7 @@ func (e *GenericTemplateBasedEncoder) templates() ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if e.debug {
-			log.Printf("new template: %q", rel)
-		}
-
+		slog.Debug("found template", "path", rel)
 		filenames = append(filenames, rel)
 		return nil
 	})
@@ -116,7 +101,6 @@ func (e *GenericTemplateBasedEncoder) genAst(templateFilename string) (*Ast, err
 		PWD:            pwd,
 		File:           e.file,
 		TemplateDir:    e.templateDir,
-		DestinationDir: e.destinationDir,
 		RawFilename:    templateFilename,
 		Filename:       "",
 		Service:        e.service,
@@ -126,7 +110,7 @@ func (e *GenericTemplateBasedEncoder) genAst(templateFilename string) (*Ast, err
 
 	unescaped, err := url.QueryUnescape(templateFilename)
 	if err != nil {
-		log.Printf("failed to unescape filepath %q: %v", templateFilename, err)
+		slog.Warn("failed to unescape filepath", "path", templateFilename, "err", err)
 	} else {
 		templateFilename = unescaped
 	}
