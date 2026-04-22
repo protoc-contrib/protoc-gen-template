@@ -1,7 +1,6 @@
 # protoc-gen-template
 
 [![CI](https://github.com/protoc-contrib/protoc-gen-template/actions/workflows/ci.yml/badge.svg)](https://github.com/protoc-contrib/protoc-gen-template/actions/workflows/ci.yml)
-[![Coverage](https://raw.githubusercontent.com/protoc-contrib/protoc-gen-template/main/.github/octocov/badge.svg)](https://github.com/protoc-contrib/protoc-gen-template/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/protoc-contrib/protoc-gen-template?include_prereleases)](https://github.com/protoc-contrib/protoc-gen-template/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 [![Go](https://img.shields.io/badge/Go-1.23-00ADD8?logo=go&logoColor=white)](https://go.dev)

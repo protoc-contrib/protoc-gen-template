@@ -3,15 +3,8 @@ coverage:
     path: .github/octocov/badge.svg
   paths:
     - coverage.out
-  acceptable: 60%
+  acceptable: 80%
 comment:
   if: is_pull_request
   deletePrevious: true
 summary:
-  if: true
-report:
-  if: is_default_branch
-  path: .github/octocov/report.json
-push:
-  if: is_default_branch
-  message: Update by octocov [skip ci]

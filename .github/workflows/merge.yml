@@ -1,19 +1,26 @@
-name: Auto Merge Dependabot
+name: Auto Merge
 
 on:
   pull_request:
+    types: [opened, reopened]
 
-permissions:
-  contents: write
-  pull-requests: write
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  automerge:
-    if: ${{ github.actor == 'dependabot[bot]' }}
+  merge:
+    if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    timeout-minutes: 5
     steps:
-      - name: Enable GitHub auto-merge
+      - name: Enable auto-merge
         env:
+          GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr merge --auto --rebase "$PR_URL"
+        run: |
+          gh pr review --approve --body "LGTM" "$PR_URL"
+          gh pr merge --auto --squash "$PR_URL"
