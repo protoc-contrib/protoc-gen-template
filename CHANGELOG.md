@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.2](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.8.1...v2.8.2) (2026-04-23)
+
+
+### Bug Fixes
+
+* bump CI runner from macos-14 to macos-15 ([1ebfd5b](https://github.com/protoc-contrib/protoc-gen-template/commit/1ebfd5be51c4965f52d166025b5365cdfb6fb80c))
+
 ## [2.8.1](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.8.0...v2.8.1) (2026-04-23)
 
 
