@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.1](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.8.0...v2.8.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* lower coverage threshold to 70% to match actual coverage ([44488e3](https://github.com/protoc-contrib/protoc-gen-template/commit/44488e3636cf17b9cd86c4b6aaaccba3f58d9317))
+
 ## [2.8.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.7.0...v2.8.0) (2026-04-22)
 
 
