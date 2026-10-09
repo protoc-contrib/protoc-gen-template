@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.8.3...v2.9.0) (2026-10-09)
+
+
+### Features
+
+* skip templates that render only whitespace ([#46](https://github.com/protoc-contrib/protoc-gen-template/issues/46)) ([30685e4](https://github.com/protoc-contrib/protoc-gen-template/commit/30685e43840a182a2160df1601bd96b0ab55a521))
+
 ## [2.8.3](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.8.2...v2.8.3) (2026-05-04)
 
 
