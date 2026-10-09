@@ -5,6 +5,7 @@ package generator
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
 	"google.golang.org/protobuf/compiler/protogen"
@@ -14,7 +15,7 @@ import (
 // template set rooted at opts.TemplateDir once per service (or per file,
 // depending on the mode flags), and attaches the rendered output to the
 // plugin response. Files that share a name have their content concatenated
-// in arrival order.
+// in arrival order, and a template that renders only whitespace is skipped.
 func Generate(plugin *protogen.Plugin, opts *Options) error {
 	if opts == nil {
 		opts = &Options{}
@@ -43,6 +44,12 @@ func Generate(plugin *protogen.Plugin, opts *Options) error {
 			return err
 		}
 		for _, tmpl := range tmpls {
+			// A template that renders only whitespace opts out for this
+			// file, e.g. one guarded by `{{if}}` to apply to a single proto
+			// package; emitting it would clash with the file it is meant for.
+			if strings.TrimSpace(tmpl.GetContent()) == "" {
+				continue
+			}
 			emit(tmpl.GetName(), tmpl.GetContent())
 		}
 		return nil

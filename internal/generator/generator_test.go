@@ -183,6 +183,42 @@ var _ = Describe("generator.Generate", func() {
 		Expect(outputNames(plugin)).To(ConsistOf("a/b/c.txt"))
 	})
 
+	It("skips a template that renders only whitespace", func() {
+		writeTemplate(tmplDir, "keep.txt.tmpl", `x`)
+		writeTemplate(tmplDir, "skip.txt.tmpl", "{{if false}}x{{end}}\n")
+
+		plugin := newPlugin(
+			[]string{"demo.proto"},
+			fileDescProto("demo.proto", true),
+		)
+
+		Expect(generator.Generate(plugin, &generator.Options{TemplateDir: tmplDir})).To(Succeed())
+		Expect(outputNames(plugin)).To(ConsistOf("keep.txt"))
+	})
+
+	It("emits a guarded template only from the run for its own directory", func() {
+		// buf runs the plugin once per proto directory, and each run walks
+		// every template; the guard keeps v1's template out of v2's run.
+		guard := `{{if hasPrefix (printf "%s/" (dir .File.Name)) .RawFilename}}pkg={{.File.Package}}{{end}}`
+		writeTemplate(tmplDir, "v1/out.txt.tmpl", guard)
+		writeTemplate(tmplDir, "v2/out.txt.tmpl", guard)
+
+		for _, version := range []string{"v1", "v2"} {
+			file := fileDescProto(version+"/demo.proto", true)
+			file.Package = proto.String("demo." + version)
+
+			plugin := newPlugin([]string{file.GetName()}, file)
+
+			Expect(generator.Generate(plugin, &generator.Options{
+				TemplateDir: tmplDir,
+				Mode:        generator.ModeFile,
+			})).To(Succeed())
+
+			Expect(outputNames(plugin)).To(ConsistOf(version + "/out.txt"))
+			Expect(outputByName(plugin, version+"/out.txt")).To(Equal("pkg=demo." + version))
+		}
+	})
+
 	It("ignores non-.tmpl files", func() {
 		writeTemplate(tmplDir, "keep.txt.tmpl", `x`)
 		writeTemplate(tmplDir, "ignore.md", `y`)

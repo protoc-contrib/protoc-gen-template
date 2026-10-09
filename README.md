@@ -29,6 +29,17 @@ release pipeline runs on Nix + `release-please`.
 - **Template-driven output** — any `.tmpl` file under `template_dir` is
   rendered; output filenames can themselves be templated, so one template
   can fan out to many files.
+- **Conditional output** — a template that renders only whitespace is
+  skipped, so it can opt out for a given proto file with `{{if}}`. When one
+  `template_dir` holds templates for several proto packages (e.g. `v1/` and
+  `v2/`), guard each template so it renders only for the proto file in its
+  own directory; otherwise every template renders for every file:
+
+  ```
+  {{- if hasPrefix (printf "%s/" (dir .File.Name)) .RawFilename -}}
+  ...
+  {{- end }}
+  ```
 - **Sprig funcmap** — every helper from
   [Masterminds/sprig](https://github.com/Masterminds/sprig) is available
   (date, string, crypto, flow, default, dictionary, and more).
