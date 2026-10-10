@@ -21,6 +21,10 @@
           src = pkgs.lib.cleanSource ./.;
           subPackages = [ "cmd/protoc-gen-template" ];
           vendorHash = "sha256-LXqGKEqveSG+esbGkSzjwF2Vsh7XGEG503WgTLyOzFo=";
+          # The standard library only uses cgo for net and os/user, which fall
+          # back to pure Go without it. The Linux binary is then static, so the
+          # release asset runs on any distribution, not only under Nix.
+          env.CGO_ENABLED = 0;
           ldflags = [
             "-s"
             "-w"
