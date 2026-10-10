@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.1](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.9.0...v2.9.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* build a static Linux binary ([#49](https://github.com/protoc-contrib/protoc-gen-template/issues/49)) ([1d4970c](https://github.com/protoc-contrib/protoc-gen-template/commit/1d4970c1695c7a8a53f02e9d6adfc05490aa7a28))
+
 ## [2.9.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.8.3...v2.9.0) (2026-10-09)
 
 
