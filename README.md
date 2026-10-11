@@ -146,6 +146,7 @@ per-invocation metadata:
 ```go
 type Ast struct {
     File          *descriptorpb.FileDescriptorProto
+    Package       string
     Service       *descriptorpb.ServiceDescriptorProto
     Enum          []*descriptorpb.EnumDescriptorProto
     TemplateDir   string
@@ -158,8 +159,32 @@ type Ast struct {
 }
 ```
 
+The descriptor fields are pointers: `.File.Package` is a `*string`. Printing
+one shows its value, but `printf`, `eq` and other functions that take any
+type receive the pointer, so `printf "%s" .File.Package` formats an address
+and an `eq` built on it never matches. Use the `Get*` accessors instead
+(`.File.GetPackage`, `.File.GetName`, `.GetInputType`), or `.Package`.
+
 See [`internal/generator/helpers.go`](internal/generator/helpers.go) for
 the full funcmap.
+
+## Rust paths
+
+`rustPath root name` turns a message or enum name into the path prost and
+buffa generate it at, under the module `root`:
+
+```
+{{ rustPath "crate::buffa" .GetInputType }}
+```
+
+`.acme.v1.CreateBookRequest` becomes
+`crate::buffa::acme::v1::CreateBookRequest`. A nested message or enum lives
+in a snake_case module named after its parent (`.acme.v1.Book.Format`
+becomes `crate::buffa::acme::v1::book::Format`), type names are
+UpperCamelCase (`HTTPRequest` becomes `HttpRequest`), and Rust keywords are
+escaped (`type` becomes `r#type`). The name must be a type in the request;
+well-known types such as `google.protobuf.Timestamp` resolve under `root`
+too, not to an external crate.
 
 ## Custom options
 

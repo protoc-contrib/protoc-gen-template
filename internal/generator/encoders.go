@@ -27,6 +27,7 @@ type Ast struct {
 	BuildUser      string                             `json:"build-user"`
 	PWD            string                             `json:"pwd"`
 	File           *descriptor.FileDescriptorProto    `json:"file"`
+	Package        string                             `json:"package"`
 	RawFilename    string                             `json:"raw-filename"`
 	Filename       string                             `json:"filename"`
 	TemplateDir    string                             `json:"template-dir"`
@@ -100,6 +101,7 @@ func (e *GenericTemplateBasedEncoder) genAst(templateFilename string) (*Ast, err
 		BuildUser:      os.Getenv("USER"),
 		PWD:            pwd,
 		File:           e.file,
+		Package:        e.file.GetPackage(),
 		TemplateDir:    e.templateDir,
 		RawFilename:    templateFilename,
 		Filename:       "",

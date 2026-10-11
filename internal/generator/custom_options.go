@@ -13,6 +13,10 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+// requestFiles holds every file in the request, imports included, to resolve
+// a type's package and parent messages from its full name.
+var requestFiles = new(protoregistry.Files)
+
 // optionTypes resolves every extension declared in the request. A schema has
 // to import the file that declares an option to use it, so the request always
 // carries its definition, whether or not the plugin links its Go bindings.
@@ -22,9 +26,10 @@ var optionTypes = new(protoregistry.Types)
 // templates tend to read the options of one descriptor several times.
 var decodedOptions = map[proto.Message]protoreflect.Message{}
 
-// LoadOptionTypes makes the extensions declared in files readable through the
-// option, hasOption and options template helpers.
-func LoadOptionTypes(files []*descriptorpb.FileDescriptorProto) error {
+// LoadDescriptors loads the files of a request for the helpers that resolve
+// names across them: option, hasOption and options read the extensions
+// declared in files, and rustPath resolves type names.
+func LoadDescriptors(files []*descriptorpb.FileDescriptorProto) error {
 	reg, err := protodesc.NewFiles(&descriptorpb.FileDescriptorSet{File: files})
 	if err != nil {
 		return fmt.Errorf("options: failed to load the descriptors: %w", err)
@@ -39,6 +44,7 @@ func LoadOptionTypes(files []*descriptorpb.FileDescriptorProto) error {
 		return fmt.Errorf("options: failed to register the extensions: %w", err)
 	}
 
+	requestFiles = reg
 	optionTypes = types
 	decodedOptions = map[proto.Message]protoreflect.Message{}
 	return nil
