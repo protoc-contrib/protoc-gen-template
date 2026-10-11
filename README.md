@@ -40,6 +40,10 @@ release pipeline runs on Nix + `release-please`.
   ...
   {{- end }}
   ```
+- **Reusable helpers** — `include` renders a named template and returns its
+  output, so it can be piped, tested and called recursively, and `.tpl`
+  partials share `define`s across every template. See
+  [Partials and include](#partials-and-include).
 - **Sprig funcmap** — every helper from
   [Masterminds/sprig](https://github.com/Masterminds/sprig) is available
   (date, string, crypto, flow, default, dictionary, and more).
@@ -185,6 +189,43 @@ UpperCamelCase (`HTTPRequest` becomes `HttpRequest`), and Rust keywords are
 escaped (`type` becomes `r#type`). The name must be a type in the request;
 well-known types such as `google.protobuf.Timestamp` resolve under `root`
 too, not to an external crate.
+
+## Partials and include
+
+A `.tpl` file under `template_dir` is a partial: it is never rendered as
+output, but every template can call the templates it `define`s. A `.tmpl`
+file is parsed on its own, so a `define` in one is visible only to that
+template; put helpers that several templates share in a partial, e.g.
+`_helpers.tpl`. When two partials define the same name, the one found last
+wins.
+
+`include "name" data` renders the named template and returns its output as
+a string, which `{{template}}` can't: it writes straight into the result.
+That lets a helper template return a value, and lets a template call itself
+to walk nested messages:
+
+```
+{{- /* _helpers.tpl */ -}}
+{{- define "required" -}}
+{{- $seen := append .seen .message.GetName -}}
+{{- range .message.Field -}}
+{{- if has "REQUIRED" (option "google.api.field_behavior" . | default list) }}{{ .Name }} {{ end -}}
+{{- if and (eq (.GetType | toString) "TYPE_MESSAGE") (not (has (.GetTypeName | splitList "." | last) $seen)) -}}
+{{- include "required" (dict "message" (getMessageType $.file .GetTypeName) "seen" $seen "file" $.file) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+```
+
+```
+{{- if include "required" (dict "message" $msg "seen" list "file" .File) | trim }}
+...
+{{- end }}
+```
+
+A template that includes itself more than 1000 times deep fails, which
+catches a walk over a message that contains itself and doesn't track the
+messages it has seen.
 
 ## Custom options
 
