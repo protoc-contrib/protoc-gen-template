@@ -48,7 +48,12 @@ release pipeline runs on Nix + `release-please`.
   (`add`, `subtract`, `multiply`, `divide`), field/message walkers
   (`getMessageType`, `isFieldMessage`, `fieldMapKeyType`, ...), HTTP
   annotation accessors (`httpPath`, `httpVerb`, `httpBody`, ...), and
-  extension readers (`stringFieldExtension`, `boolFieldExtension`, ...).
+  custom option readers (`option`, `hasOption`, `options`).
+- **Custom options, whoever owns them** — templates read any custom option
+  set in the schema by its full name, from
+  [protoc-types](https://github.com/protoc-contrib/protoc-types),
+  googleapis, or a private package the plugin knows nothing about. See
+  [Custom options](#custom-options).
 - **Flexible iteration** — `mode=service` (default) renders once per gRPC
   service; `mode=file` renders once per file that declares a service;
   `mode=all` renders every proto file whether or not it declares a service.
@@ -153,6 +158,46 @@ type Ast struct {
 
 See [`internal/generator/helpers.go`](internal/generator/helpers.go) for
 the full funcmap.
+
+## Custom options
+
+`option`, `hasOption` and `options` read the custom options set on any
+descriptor: a file, message, field, oneof, enum, enum value, service or
+method.
+
+| Helper                       | Returns                                                |
+| ---------------------------- | ------------------------------------------------------ |
+| `option "full.name" desc`    | The option's value, or nothing when it isn't set.      |
+| `hasOption "full.name" desc` | Whether the option is set, even to its zero value.     |
+| `options desc`               | Every custom option set on `desc`, keyed by full name. |
+
+Scalars keep their type, enums become their value name, messages become a
+map keyed by field name, and repeated options become a list.
+
+```proto
+import "protoc/contrib/defaults/options.proto";
+
+message ListBooksRequest {
+  int32 page_size = 1 [(protoc.contrib.defaults.value).int32 = 50];
+}
+```
+
+```
+{{- range .Field }}
+{{- if hasOption "protoc.contrib.defaults.value" . }}
+{{ .Name }} defaults to {{ (option "protoc.contrib.defaults.value" .).int32 }}
+{{- end }}
+{{- end }}
+```
+
+The plugin needs no Go bindings for an option: a schema has to import the
+file that declares an option to use it, so protoc sends that declaration to
+the plugin along with the schema. `{{ options . | toPrettyJson }}` shows
+what is set on a descriptor.
+
+The number-based readers (`stringFieldExtension`, `boolMessageExtension`,
+...) predate these helpers and are kept for existing templates; prefer
+`option` in new ones.
 
 ## Migration from `protoc-gen-gotemplate`
 

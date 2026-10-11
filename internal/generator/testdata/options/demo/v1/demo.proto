@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package demo.v1;
+
+import "acme/options.proto";
+import "google/api/field_behavior.proto";
+import "protoc/contrib/defaults/options.proto";
+import "protoc/contrib/json/options.proto";
+
+option go_package = "example.com/demo/v1;demov1";
+option (acme.owner) = "team-books";
+
+message Book {
+  option (acme.table) = {
+    name: "books"
+    indexes: ["title", "author"]
+    labels: {key: "tier", value: "gold"}
+  };
+
+  string title = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page_size = 2 [(protoc.contrib.defaults.value).int32 = 50];
+  Format format = 3 [(protoc.contrib.defaults.value).enum_name = "FORMAT_PAPERBACK"];
+  bool draft = 4 [(protoc.contrib.defaults.value).bool = false];
+  Book sequel = 5 [(protoc.contrib.defaults.value).message = {initialize: true}];
+  string notes = 6;
+
+  oneof source {
+    option (protoc.contrib.defaults.oneof) = "isbn";
+    string isbn = 7;
+    string url = 8;
+  }
+}
+
+message Hand {
+  option (protoc.contrib.defaults.skip) = true;
+  option (protoc.contrib.json.skip) = true;
+}
+
+enum Format {
+  option (protoc.contrib.json.enum_skip) = true;
+
+  FORMAT_UNSPECIFIED = 0;
+  FORMAT_PAPERBACK = 1 [(acme.label) = "Paperback"];
+}
+
+service Library {
+  option (acme.internal) = true;
+
+  rpc GetBook(Book) returns (Book) {
+    option (acme.timeout_ms) = 1500;
+  }
+}
