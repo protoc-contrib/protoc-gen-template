@@ -29,6 +29,8 @@ var _ = Describe("Options.Set", func() {
 		Entry("service", "service", generator.ModeService),
 		Entry("file", "file", generator.ModeFile),
 		Entry("all", "all", generator.ModeAll),
+		Entry("package", "package", generator.ModePackage),
+		Entry("once", "once", generator.ModeOnce),
 	)
 
 	It("rejects unknown mode values", func() {

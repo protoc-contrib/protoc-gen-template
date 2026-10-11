@@ -166,6 +166,8 @@ var ProtoHelpersFuncMap = template.FuncMap{
 	"rustType":                     rustType,
 	"rustTypeWithPackage":          rustTypeWithPackage,
 	"rustPath":                     rustPath,
+	"packages":                     packages,
+	"byPackage":                    byPackage,
 	// include is bound to its template set while rendering; this entry lets
 	// templates that call it parse.
 	"include": func(string, any) (string, error) {
@@ -219,9 +221,11 @@ func SetRegistry(reg *ggdescriptor.Registry) {
 	registry = reg
 }
 
-func InitPathMap(file *descriptor.FileDescriptorProto) {
+func InitPathMap(files ...*descriptor.FileDescriptorProto) {
 	pathMap = make(map[any]*descriptor.SourceCodeInfo_Location)
-	addToPathMap(file.GetSourceCodeInfo(), file, []int32{})
+	for _, file := range files {
+		addToPathMap(file.GetSourceCodeInfo(), file, []int32{})
+	}
 }
 
 // addToPathMap traverses through the AST adding SourceCodeInfo_Location entries to the pathMap.
@@ -292,6 +296,21 @@ func leadingDetachedComments(i any) []string {
 
 func init() {
 	maps.Copy(ProtoHelpersFuncMap, sprig.TxtFuncMap())
+}
+
+// packages returns the distinct proto packages of files, sorted.
+func packages(files []*descriptor.FileDescriptorProto) []string {
+	return slices.Sorted(maps.Keys(byPackage(files)))
+}
+
+// byPackage groups files by proto package. Ranging over the result visits
+// the packages in sorted order.
+func byPackage(files []*descriptor.FileDescriptorProto) map[string][]*descriptor.FileDescriptorProto {
+	groups := map[string][]*descriptor.FileDescriptorProto{}
+	for _, file := range files {
+		groups[file.GetPackage()] = append(groups[file.GetPackage()], file)
+	}
+	return groups
 }
 
 func getProtoFile(name string) *ggdescriptor.File {

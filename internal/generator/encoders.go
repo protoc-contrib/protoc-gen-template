@@ -21,6 +21,8 @@ type GenericTemplateBasedEncoder struct {
 	service     *descriptor.ServiceDescriptorProto
 	file        *descriptor.FileDescriptorProto
 	enum        []*descriptor.EnumDescriptorProto
+	pkg         string
+	files       []*descriptor.FileDescriptorProto
 }
 
 type Ast struct {
@@ -30,6 +32,7 @@ type Ast struct {
 	PWD            string                             `json:"pwd"`
 	File           *descriptor.FileDescriptorProto    `json:"file"`
 	Package        string                             `json:"package"`
+	Files          []*descriptor.FileDescriptorProto  `json:"files"`
 	RawFilename    string                             `json:"raw-filename"`
 	Filename       string                             `json:"filename"`
 	TemplateDir    string                             `json:"template-dir"`
@@ -43,6 +46,8 @@ func NewGenericServiceTemplateBasedEncoder(templateDir string, service *descript
 		file:        file,
 		templateDir: templateDir,
 		enum:        file.GetEnumType(),
+		pkg:         file.GetPackage(),
+		files:       []*descriptor.FileDescriptorProto{file},
 	}
 	slog.Debug("new encoder", "file", file.GetName(), "service", service.GetName(), "template-dir", templateDir)
 	InitPathMap(file)
@@ -56,9 +61,26 @@ func NewGenericTemplateBasedEncoder(templateDir string, file *descriptor.FileDes
 		file:        file,
 		templateDir: templateDir,
 		enum:        file.GetEnumType(),
+		pkg:         file.GetPackage(),
+		files:       []*descriptor.FileDescriptorProto{file},
 	}
 	slog.Debug("new encoder", "file", file.GetName(), "template-dir", templateDir)
 	InitPathMap(file)
+
+	return
+}
+
+// NewGenericFilesTemplateBasedEncoder renders templates once for several
+// files: those of the proto package pkg, or every file to generate when pkg
+// is empty. Templates see .Files and .Package; .File and .Service are nil.
+func NewGenericFilesTemplateBasedEncoder(templateDir string, pkg string, files []*descriptor.FileDescriptorProto) (e *GenericTemplateBasedEncoder) {
+	e = &GenericTemplateBasedEncoder{
+		templateDir: templateDir,
+		pkg:         pkg,
+		files:       files,
+	}
+	slog.Debug("new encoder", "package", pkg, "files", len(files), "template-dir", templateDir)
+	InitPathMap(files...)
 
 	return
 }
@@ -110,7 +132,8 @@ func (e *GenericTemplateBasedEncoder) genAst(templateFilename string) (*Ast, err
 		BuildUser:      os.Getenv("USER"),
 		PWD:            pwd,
 		File:           e.file,
-		Package:        e.file.GetPackage(),
+		Package:        e.pkg,
+		Files:          e.files,
 		TemplateDir:    e.templateDir,
 		RawFilename:    templateFilename,
 		Filename:       "",

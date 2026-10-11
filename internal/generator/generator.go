@@ -9,11 +9,12 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // Generate walks the files protoc asked to generate, applies the template set
-// rooted at opts.TemplateDir once per service (or per file, depending on the
-// mode flags), and attaches the rendered output to the
+// rooted at opts.TemplateDir once per service (or per file, per package or
+// once, depending on the mode), and attaches the rendered output to the
 // plugin response. Files that share a name have their content concatenated
 // in arrival order, and a template that renders only whitespace is skipped.
 func Generate(plugin *protogen.Plugin, opts *Options) error {
@@ -58,29 +59,46 @@ func Generate(plugin *protogen.Plugin, opts *Options) error {
 		return nil
 	}
 
+	// The request also carries every file the schema imports, which only
+	// resolve types and options; protoc asked for the others.
+	var files []*descriptorpb.FileDescriptorProto
 	for _, f := range plugin.Files {
-		// The request also carries every file the schema imports, which only
-		// resolve types and options; protoc asked for the others.
-		if !f.Generate {
-			continue
+		if f.Generate {
+			files = append(files, f.Proto)
 		}
-		file := f.Proto
-		switch opts.Mode {
-		case ModeAll:
-			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file)); err != nil {
+	}
+
+	switch opts.Mode {
+	case ModeOnce:
+		if err := emitAll(NewGenericFilesTemplateBasedEncoder(opts.TemplateDir, "", files)); err != nil {
+			return err
+		}
+	case ModePackage:
+		groups := byPackage(files)
+		for _, pkg := range packages(files) {
+			if err := emitAll(NewGenericFilesTemplateBasedEncoder(opts.TemplateDir, pkg, groups[pkg])); err != nil {
 				return err
 			}
-		case ModeFile:
-			if len(file.GetService()) == 0 {
-				continue
-			}
-			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file)); err != nil {
-				return err
-			}
-		default: // ModeService or ""
-			for _, service := range file.GetService() {
-				if err := emitAll(NewGenericServiceTemplateBasedEncoder(opts.TemplateDir, service, file)); err != nil {
+		}
+	default:
+		for _, file := range files {
+			switch opts.Mode {
+			case ModeAll:
+				if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file)); err != nil {
 					return err
+				}
+			case ModeFile:
+				if len(file.GetService()) == 0 {
+					continue
+				}
+				if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file)); err != nil {
+					return err
+				}
+			default: // ModeService or ""
+				for _, service := range file.GetService() {
+					if err := emitAll(NewGenericServiceTemplateBasedEncoder(opts.TemplateDir, service, file)); err != nil {
+						return err
+					}
 				}
 			}
 		}
