@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.10.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.9.1...v2.10.0) (2026-10-11)
+
+
+### Features
+
+* read custom options by name in templates ([c15fb0e](https://github.com/protoc-contrib/protoc-gen-template/commit/c15fb0e22a6898c8bac49c75eeb1df9e2bc0b8b9))
+
+
+### Bug Fixes
+
+* read custom options with the number-based extension helpers ([eecfc36](https://github.com/protoc-contrib/protoc-gen-template/commit/eecfc3697e44fabaa69b79b969d521e12cc97152))
+
 ## [2.9.1](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.9.0...v2.9.1) (2026-10-10)
 
 
