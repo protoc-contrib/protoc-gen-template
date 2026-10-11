@@ -94,6 +94,7 @@ var _ = Describe("include and partials", func() {
 })
 
 type generatorResult struct {
-	names []string
-	out   string
+	names   []string
+	out     string
+	outputs map[string]string
 }

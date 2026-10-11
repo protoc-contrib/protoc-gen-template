@@ -15,13 +15,21 @@ const (
 	// ModeAll renders the template set once per file to generate, including
 	// files that declare no services. Templates see .File; .Service is nil.
 	ModeAll Mode = "all"
+	// ModePackage renders the template set once per proto package among the
+	// files to generate. Templates see .Package and the package's .Files;
+	// .File and .Service are nil.
+	ModePackage Mode = "package"
+	// ModeOnce renders the template set once per run. Templates see every
+	// file to generate in .Files; .Package is empty, .File and .Service nil.
+	ModeOnce Mode = "once"
 )
 
 // Options controls how the plugin discovers templates and emits output.
 type Options struct {
 	// TemplateDir is the root directory containing .tmpl files to render.
 	TemplateDir string
-	// Mode selects the iteration granularity: "service" (default), "file", or "all".
+	// Mode selects the iteration granularity: "service" (default), "file",
+	// "all", "package", or "once".
 	Mode Mode
 }
 
@@ -33,10 +41,10 @@ func (o *Options) Set(name, value string) error {
 		o.TemplateDir = value
 	case "mode":
 		switch Mode(value) {
-		case ModeService, ModeFile, ModeAll:
+		case ModeService, ModeFile, ModeAll, ModePackage, ModeOnce:
 			o.Mode = Mode(value)
 		default:
-			return fmt.Errorf("unknown mode %q: must be service, file, or all", value)
+			return fmt.Errorf("unknown mode %q: must be service, file, all, package, or once", value)
 		}
 	default:
 		return fmt.Errorf("unknown plugin option %q", name)

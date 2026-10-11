@@ -60,7 +60,9 @@ release pipeline runs on Nix + `release-please`.
   [Custom options](#custom-options).
 - **Flexible iteration** — `mode=service` (default) renders once per gRPC
   service; `mode=file` renders once per file that declares a service;
-  `mode=all` renders every proto file whether or not it declares a service.
+  `mode=all` renders every proto file whether or not it declares a service;
+  `mode=package` renders once per proto package; `mode=once` renders once
+  per run, for output that covers every package, such as a Rust `mod.rs`.
   Every mode renders only the files protoc was asked to generate, not the
   files they import.
 - **Cross-file lookups** — the plugin always loads a `grpc-gateway` registry
@@ -78,7 +80,7 @@ Pass plugin options via `--template_opt=key=value` (protoc) or the
 | Option         | Default      | Effect                                                                                                                           |
 | -------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
 | `template_dir` | `./template` | Root directory containing `.tmpl` files.                                                                                         |
-| `mode`         | `service`    | Iteration granularity: `service` (once per service), `file` (once per file that has a service), `all` (every file, no filter).   |
+| `mode`         | `service`    | Iteration granularity: `service` (once per service), `file` (once per file that has a service), `all` (every file, no filter), `package` (once per proto package), `once` (once per run). |
 
 ## Installation
 
@@ -151,6 +153,7 @@ per-invocation metadata:
 type Ast struct {
     File          *descriptorpb.FileDescriptorProto
     Package       string
+    Files         []*descriptorpb.FileDescriptorProto
     Service       *descriptorpb.ServiceDescriptorProto
     Enum          []*descriptorpb.EnumDescriptorProto
     TemplateDir   string
@@ -161,6 +164,19 @@ type Ast struct {
     BuildHostname string
     BuildUser     string
 }
+```
+
+`.Files` holds the files a render covers: the one file in the `service`,
+`file` and `all` modes, the package's files with `mode=package`, and every
+file to generate with `mode=once`. In those last two, `.File` and `.Service`
+are nil, and `.Package` is empty with `mode=once`. `packages .Files` lists
+their packages, sorted, and `byPackage .Files` groups them by package:
+
+```
+{{- /* mod.rs.tmpl, mode=once */ -}}
+{{- range $pkg, $files := byPackage .Files }}
+// {{ $pkg }}: {{ len $files }} file(s)
+{{- end }}
 ```
 
 The descriptor fields are pointers: `.File.Package` is a `*string`. Printing
