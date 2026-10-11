@@ -28,7 +28,7 @@ func Generate(plugin *protogen.Plugin, opts *Options) error {
 	if err := reg.Load(req); err != nil {
 		return fmt.Errorf("registry: failed to load the request: %w", err)
 	}
-	if err := LoadOptionTypes(req.GetProtoFile()); err != nil {
+	if err := LoadDescriptors(req.GetProtoFile()); err != nil {
 		return err
 	}
 

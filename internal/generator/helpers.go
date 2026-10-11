@@ -165,6 +165,7 @@ var ProtoHelpersFuncMap = template.FuncMap{
 	"cppTypeWithPackage":           cppTypeWithPackage,
 	"rustType":                     rustType,
 	"rustTypeWithPackage":          rustTypeWithPackage,
+	"rustPath":                     rustPath,
 }
 
 var pathMap map[any]*descriptor.SourceCodeInfo_Location
