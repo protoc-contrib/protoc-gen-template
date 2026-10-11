@@ -1,0 +1,35 @@
+// A stand-in for options the template author doesn't own and has no Go
+// bindings for.
+syntax = "proto3";
+
+package acme;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "example.com/acme;acme";
+
+message Table {
+  string name = 1;
+  repeated string indexes = 2;
+  map<string, string> labels = 3;
+}
+
+extend google.protobuf.MessageOptions {
+  Table table = 60000;
+}
+
+extend google.protobuf.EnumValueOptions {
+  string label = 60000;
+}
+
+extend google.protobuf.ServiceOptions {
+  bool internal = 60000;
+}
+
+extend google.protobuf.MethodOptions {
+  int64 timeout_ms = 60000;
+}
+
+extend google.protobuf.FileOptions {
+  string owner = 60000;
+}

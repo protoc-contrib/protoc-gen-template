@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package protoc.contrib.json;
+
+option go_package = "github.com/protoc-contrib/protoc-types/contrib/json;json";
+
+import "google/protobuf/descriptor.proto";
+
+// Message-level controls for protoc-gen-go-json.
+extend google.protobuf.MessageOptions {
+  // When true, skip emitting MarshalJSON / UnmarshalJSON for this message.
+  // Use this when a message needs a hand-written implementation.
+  optional bool skip = 55100;
+}
+
+// Enum-level controls for protoc-gen-go-json.
+extend google.protobuf.EnumOptions {
+  // When true, skip emitting MarshalJSON / UnmarshalJSON for this enum.
+  optional bool enum_skip = 55100;
+}
