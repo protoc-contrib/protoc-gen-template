@@ -57,6 +57,8 @@ release pipeline runs on Nix + `release-please`.
 - **Flexible iteration** — `mode=service` (default) renders once per gRPC
   service; `mode=file` renders once per file that declares a service;
   `mode=all` renders every proto file whether or not it declares a service.
+  Every mode renders only the files protoc was asked to generate, not the
+  files they import.
 - **Cross-file lookups** — the plugin always loads a `grpc-gateway` registry
   so templates can resolve messages across imports via `getMessageType` and
   `getProtoFile`.

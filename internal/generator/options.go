@@ -12,8 +12,8 @@ const (
 	// ModeFile renders the template set once per file that declares at least
 	// one service. Templates see .File and .File.Service; .Service is nil.
 	ModeFile Mode = "file"
-	// ModeAll renders the template set once per file, including files that
-	// declare no services. Templates see .File; .Service is nil.
+	// ModeAll renders the template set once per file to generate, including
+	// files that declare no services. Templates see .File; .Service is nil.
 	ModeAll Mode = "all"
 )
 

@@ -11,9 +11,9 @@ import (
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
-// Generate walks the request the plugin was invoked with, applies the
-// template set rooted at opts.TemplateDir once per service (or per file,
-// depending on the mode flags), and attaches the rendered output to the
+// Generate walks the files protoc asked to generate, applies the template set
+// rooted at opts.TemplateDir once per service (or per file, depending on the
+// mode flags), and attaches the rendered output to the
 // plugin response. Files that share a name have their content concatenated
 // in arrival order, and a template that renders only whitespace is skipped.
 func Generate(plugin *protogen.Plugin, opts *Options) error {
@@ -58,7 +58,13 @@ func Generate(plugin *protogen.Plugin, opts *Options) error {
 		return nil
 	}
 
-	for _, file := range req.GetProtoFile() {
+	for _, f := range plugin.Files {
+		// The request also carries every file the schema imports, which only
+		// resolve types and options; protoc asked for the others.
+		if !f.Generate {
+			continue
+		}
+		file := f.Proto
 		switch opts.Mode {
 		case ModeAll:
 			if err := emitAll(NewGenericTemplateBasedEncoder(opts.TemplateDir, file)); err != nil {
