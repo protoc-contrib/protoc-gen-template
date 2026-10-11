@@ -16,13 +16,19 @@ message Book {
     indexes: ["title", "author"]
     labels: {key: "tier", value: "gold"}
   };
+  option (acme.ttl_seconds) = 3600;
+  option (acme.comment) = "A book.";
 
   string title = 1 [(google.api.field_behavior) = REQUIRED];
   int32 page_size = 2 [(protoc.contrib.defaults.value).int32 = 50];
   Format format = 3 [(protoc.contrib.defaults.value).enum_name = "FORMAT_PAPERBACK"];
   bool draft = 4 [(protoc.contrib.defaults.value).bool = false];
   Book sequel = 5 [(protoc.contrib.defaults.value).message = {initialize: true}];
-  string notes = 6;
+  string notes = 6 [
+    (acme.column) = "book_notes",
+    (acme.max_length) = 280,
+    (acme.sensitive) = true
+  ];
 
   oneof source {
     option (protoc.contrib.defaults.oneof) = "isbn";
@@ -47,6 +53,8 @@ service Library {
   option (acme.internal) = true;
 
   rpc GetBook(Book) returns (Book) {
+    option (acme.route) = "/books/{title}";
     option (acme.timeout_ms) = 1500;
+    option (acme.idempotent) = true;
   }
 }

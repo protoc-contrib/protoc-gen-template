@@ -115,7 +115,7 @@ url=null`))
 	})
 
 	It("returns nothing for a descriptor without options", func() {
-		Expect(render(`{{ option "acme.owner" (index (index .File.MessageType 0).Field 5) }}|{{ options (index (index .File.MessageType 0).Field 5) | toJson }}`)).
+		Expect(render(`{{ option "acme.owner" (index (index .File.MessageType 0).Field 6) }}|{{ options (index (index .File.MessageType 0).Field 6) | toJson }}`)).
 			To(Equal("<no value>|{}"))
 	})
 

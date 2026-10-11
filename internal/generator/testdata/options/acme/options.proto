@@ -16,6 +16,14 @@ message Table {
 
 extend google.protobuf.MessageOptions {
   Table table = 60000;
+  int64 ttl_seconds = 60001;
+  string comment = 60002;
+}
+
+extend google.protobuf.FieldOptions {
+  string column = 60000;
+  int64 max_length = 60001;
+  bool sensitive = 60002;
 }
 
 extend google.protobuf.EnumValueOptions {
@@ -27,7 +35,9 @@ extend google.protobuf.ServiceOptions {
 }
 
 extend google.protobuf.MethodOptions {
-  int64 timeout_ms = 60000;
+  string route = 60000;
+  int64 timeout_ms = 60001;
+  bool idempotent = 60002;
 }
 
 extend google.protobuf.FileOptions {
