@@ -1,13 +1,13 @@
 {
   "assets": {
     "aarch64-darwin": {
-      "hash": "sha256-RVyTKNDbLBv1RvvQrj5Qt8Weh92+eEzlT+of/x3wS00=",
-      "url": "https://github.com/protoc-contrib/protoc-gen-template/releases/download/v2.10.0/protoc-gen-template-aarch64-darwin"
+      "hash": "sha256-E7wcurFBbGEJwhHVge2DOuLQWWWq4JGDWIqEXxGNfDA=",
+      "url": "https://github.com/protoc-contrib/protoc-gen-template/releases/download/v2.11.0/protoc-gen-template-aarch64-darwin"
     },
     "x86_64-linux": {
-      "hash": "sha256-m/Ues72UMtednUhRxVxDWMdIKWd6ua0ii960dbx2yJw=",
-      "url": "https://github.com/protoc-contrib/protoc-gen-template/releases/download/v2.10.0/protoc-gen-template-x86_64-linux"
+      "hash": "sha256-4yL5uuupOgBnoegTYyNcweXYHpHghCyJ9xYwt0SbYJM=",
+      "url": "https://github.com/protoc-contrib/protoc-gen-template/releases/download/v2.11.0/protoc-gen-template-x86_64-linux"
     }
   },
-  "version": "2.10.0"
+  "version": "2.11.0"
 }
