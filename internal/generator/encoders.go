@@ -2,11 +2,13 @@ package generator
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 
@@ -61,28 +63,35 @@ func NewGenericTemplateBasedEncoder(templateDir string, file *descriptor.FileDes
 	return
 }
 
-func (e *GenericTemplateBasedEncoder) templates() ([]string, error) {
-	filenames := []string{}
-
-	err := filepath.Walk(e.templateDir, func(path string, info os.FileInfo, err error) error {
+// templates returns the paths, relative to the template directory, of the
+// templates to render, .tmpl, and of the partials every template can call
+// into, .tpl.
+func (e *GenericTemplateBasedEncoder) templates() (templates, partials []string, err error) {
+	err = filepath.Walk(e.templateDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
 			return nil
 		}
-		if filepath.Ext(path) != ".tmpl" {
+		ext := filepath.Ext(path)
+		if ext != ".tmpl" && ext != ".tpl" {
 			return nil
 		}
 		rel, err := filepath.Rel(e.templateDir, path)
 		if err != nil {
 			return err
 		}
+		if ext == ".tpl" {
+			slog.Debug("found partial", "path", rel)
+			partials = append(partials, rel)
+			return nil
+		}
 		slog.Debug("found template", "path", rel)
-		filenames = append(filenames, rel)
+		templates = append(templates, rel)
 		return nil
 	})
-	return filenames, err
+	return templates, partials, err
 }
 
 func (e *GenericTemplateBasedEncoder) genAst(templateFilename string) (*Ast, error) {
@@ -128,11 +137,15 @@ func (e *GenericTemplateBasedEncoder) genAst(templateFilename string) (*Ast, err
 	return &ast, nil
 }
 
-func (e *GenericTemplateBasedEncoder) buildContent(templateFilename string) (string, string, error) {
+func (e *GenericTemplateBasedEncoder) buildContent(templateFilename string, partials []string) (string, string, error) {
 	// initialize template engine
 	fullPath := filepath.Join(e.templateDir, templateFilename)
-	templateName := filepath.Base(fullPath)
-	tmpl, err := template.New(templateName).Funcs(ProtoHelpersFuncMap).ParseFiles(fullPath)
+	paths := []string{fullPath}
+	for _, partial := range partials {
+		paths = append(paths, filepath.Join(e.templateDir, partial))
+	}
+	tmpl := template.New(filepath.Base(fullPath)).Funcs(ProtoHelpersFuncMap)
+	tmpl, err := tmpl.Funcs(template.FuncMap{"include": include(tmpl)}).ParseFiles(paths...)
 	if err != nil {
 		return "", "", err
 	}
@@ -152,14 +165,14 @@ func (e *GenericTemplateBasedEncoder) buildContent(templateFilename string) (str
 }
 
 func (e *GenericTemplateBasedEncoder) Files() ([]*plugin_go.CodeGeneratorResponse_File, error) {
-	templates, err := e.templates()
+	templates, partials, err := e.templates()
 	if err != nil {
 		return nil, fmt.Errorf("walk templates in %q: %w", e.templateDir, err)
 	}
 
 	files := make([]*plugin_go.CodeGeneratorResponse_File, 0, len(templates))
 	for _, templateFilename := range templates {
-		content, translatedFilename, err := e.buildContent(templateFilename)
+		content, translatedFilename, err := e.buildContent(templateFilename, partials)
 		if err != nil {
 			return nil, fmt.Errorf("render %q: %w", templateFilename, err)
 		}
@@ -171,4 +184,43 @@ func (e *GenericTemplateBasedEncoder) Files() ([]*plugin_go.CodeGeneratorRespons
 		})
 	}
 	return files, nil
+}
+
+// maxIncludeDepth bounds how deep include calls the same template, to fail
+// cleanly on a recursive walk that never ends, e.g. over a message that
+// contains itself.
+const maxIncludeDepth = 1000
+
+// include returns the include template function for tmpl: it renders the
+// named template with data and returns the output, which {{template}} can't,
+// so the output can be piped and tested.
+func include(tmpl *template.Template) func(string, any) (string, error) {
+	depth := map[string]int{}
+	return func(name string, data any) (string, error) {
+		if depth[name] >= maxIncludeDepth {
+			return "", &includeDepthError{name: name}
+		}
+		depth[name]++
+		defer func() { depth[name]-- }()
+
+		var buffer strings.Builder
+		if err := tmpl.ExecuteTemplate(&buffer, name, data); err != nil {
+			// Pass the depth error up as is, rather than wrapped once per
+			// call it went through.
+			var depthErr *includeDepthError
+			if errors.As(err, &depthErr) {
+				return "", depthErr
+			}
+			return "", err
+		}
+		return buffer.String(), nil
+	}
+}
+
+type includeDepthError struct {
+	name string
+}
+
+func (e *includeDepthError) Error() string {
+	return fmt.Sprintf("include: %q called itself more than %d times", e.name, maxIncludeDepth)
 }

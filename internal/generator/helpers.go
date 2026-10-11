@@ -166,6 +166,11 @@ var ProtoHelpersFuncMap = template.FuncMap{
 	"rustType":                     rustType,
 	"rustTypeWithPackage":          rustTypeWithPackage,
 	"rustPath":                     rustPath,
+	// include is bound to its template set while rendering; this entry lets
+	// templates that call it parse.
+	"include": func(string, any) (string, error) {
+		return "", fmt.Errorf("include is only available while rendering a template")
+	},
 }
 
 var pathMap map[any]*descriptor.SourceCodeInfo_Location
