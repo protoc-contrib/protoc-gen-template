@@ -1,67 +1,53 @@
 package generator
 
 import (
-	"fmt"
-	"sync"
-
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-var protoregistryMutex sync.Mutex
-
-// messageV1 matches the legacy proto.Message shape expected by
-// protoimpl.ExtensionInfo.ExtendedType.
-type messageV1 = interface {
-	Reset()
-	String() string
-	ProtoMessage()
-}
-
-// getExtension returns the value of an extension.
-//
-// If the extension with the given ID is not already registered, it will be made up.
-func getExtension(extendedMessage proto.Message, extendedType messageV1, fieldID int32, fieldType any) (any, error) {
-	// To prevent concurrent map read/write while querying the registry and registring new extensions, request a lock.
-	protoregistryMutex.Lock()
-	defer protoregistryMutex.Unlock()
-
-	// Query the registry for the given Message and field ID.
-	eds := make(map[int32]*protoimpl.ExtensionInfo)
-	protoregistry.GlobalTypes.RangeExtensionsByMessage(extendedMessage.ProtoReflect().Descriptor().FullName(), func(xt protoreflect.ExtensionType) bool {
-		if xd, ok := xt.(*protoimpl.ExtensionInfo); ok {
-			eds[int32(xt.TypeDescriptor().Number())] = xd
-		}
-
-		return true
-	})
-	extensionInfo := eds[fieldID]
-
-	// Create the extension, if it was not yet found.
-	if extensionInfo == nil {
-		// Infer the struct tag type from field type.
-		tagType := "varint"
-		if _, ok := fieldType.(*string); ok {
-			tagType = "bytes"
-		}
-
-		extensionInfo = &protoimpl.ExtensionInfo{
-			ExtendedType:  extendedType,
-			ExtensionType: fieldType,
-			Field:         fieldID,
-			Tag:           fmt.Sprintf("%s,%d", tagType, fieldID),
-			Name:          fmt.Sprintf("%d", fieldID),
-		}
-		err := protoregistry.GlobalTypes.RegisterExtension(extensionInfo)
-		if err != nil {
-			return nil, fmt.Errorf("error registering extension: %w", err)
-		}
+// extensionByNumber returns the value of the custom option with the given
+// field number set on desc, or nil when it isn't set. The number-based
+// helpers below predate option, which reads options by full name; they read
+// options the same way, against the request's own declarations.
+func extensionByNumber(fieldID int32, desc any) any {
+	opts, err := decodeOptions(desc)
+	if err != nil || opts == nil {
+		return nil
 	}
 
-	return proto.GetExtension(extendedMessage, extensionInfo), nil
+	var value any
+	opts.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		if fd.IsExtension() && int32(fd.Number()) == fieldID {
+			value = v.Interface()
+			return false
+		}
+		return true
+	})
+	return value
+}
+
+func stringExtension(fieldID int32, desc any) string {
+	s, _ := extensionByNumber(fieldID, desc).(string)
+	return s
+}
+
+func boolExtension(fieldID int32, desc any) bool {
+	b, _ := extensionByNumber(fieldID, desc).(bool)
+	return b
+}
+
+func int64Extension(fieldID int32, desc any) int64 {
+	switch i := extensionByNumber(fieldID, desc).(type) {
+	case int32:
+		return int64(i)
+	case int64:
+		return i
+	case uint32:
+		return int64(i)
+	case uint64:
+		return int64(i)
+	}
+	return 0
 }
 
 // stringMethodOptionsExtension extracts method options of a string type.
@@ -70,44 +56,12 @@ func getExtension(extendedMessage proto.Message, extendedType messageV1, fieldID
 // Typically the fieldID of private extensions should be in the range:
 // 50000-99999
 func stringMethodOptionsExtension(fieldID int32, f *descriptorpb.MethodDescriptorProto) string {
-	if f == nil || f.Options == nil {
-		return ""
-	}
-
-	var extendedType *descriptorpb.MethodOptions
-	var fieldType *string
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return ""
-	}
-
-	if str, ok := ext.(*string); ok {
-		return *str
-	}
-
-	return ""
+	return stringExtension(fieldID, f)
 }
 
 // boolMethodOptionsExtension extracts method options of a boolean type.
 func boolMethodOptionsExtension(fieldID int32, f *descriptorpb.MethodDescriptorProto) bool {
-	if f == nil || f.Options == nil {
-		return false
-	}
-
-	var extendedType *descriptorpb.MethodOptions
-	var fieldType *bool
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return false
-	}
-
-	if b, ok := ext.(*bool); ok {
-		return *b
-	}
-
-	return false
+	return boolExtension(fieldID, f)
 }
 
 // stringFileOptionsExtension extracts file options of a string type.
@@ -116,146 +70,29 @@ func boolMethodOptionsExtension(fieldID int32, f *descriptorpb.MethodDescriptorP
 // Typically the fieldID of private extensions should be in the range:
 // 50000-99999
 func stringFileOptionsExtension(fieldID int32, f *descriptorpb.FileDescriptorProto) string {
-	if f == nil || f.Options == nil {
-		return ""
-	}
-
-	var extendedType *descriptorpb.FileOptions
-	var fieldType *string
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return ""
-	}
-
-	if str, ok := ext.(*string); ok {
-		return *str
-	}
-
-	return ""
+	return stringExtension(fieldID, f)
 }
 
 func stringFieldExtension(fieldID int32, f *descriptorpb.FieldDescriptorProto) string {
-	if f == nil || f.Options == nil {
-		return ""
-	}
-
-	var extendedType *descriptorpb.FieldOptions
-	var fieldType *string
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return ""
-	}
-
-	str, ok := ext.(*string)
-	if !ok {
-		return ""
-	}
-
-	return *str
+	return stringExtension(fieldID, f)
 }
 
 func int64FieldExtension(fieldID int32, f *descriptorpb.FieldDescriptorProto) int64 {
-	if f == nil || f.Options == nil {
-		return 0
-	}
-
-	var extendedType *descriptorpb.FieldOptions
-	var fieldType *int64
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return 0
-	}
-
-	i, ok := ext.(*int64)
-	if !ok {
-		return 0
-	}
-
-	return *i
+	return int64Extension(fieldID, f)
 }
 
 func int64MessageExtension(fieldID int32, f *descriptorpb.DescriptorProto) int64 {
-	if f == nil || f.Options == nil {
-		return 0
-	}
-
-	var extendedType *descriptorpb.MessageOptions
-	var fieldType *int64
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return 0
-	}
-
-	i, ok := ext.(*int64)
-	if !ok {
-		return 0
-	}
-
-	return *i
+	return int64Extension(fieldID, f)
 }
 
 func stringMessageExtension(fieldID int32, f *descriptorpb.DescriptorProto) string {
-	if f == nil || f.Options == nil {
-		return ""
-	}
-
-	var extendedType *descriptorpb.MessageOptions
-	var fieldType *string
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return ""
-	}
-
-	str, ok := ext.(*string)
-	if !ok {
-		return ""
-	}
-
-	return *str
+	return stringExtension(fieldID, f)
 }
 
 func boolFieldExtension(fieldID int32, f *descriptorpb.FieldDescriptorProto) bool {
-	if f == nil || f.Options == nil {
-		return false
-	}
-
-	var extendedType *descriptorpb.FieldOptions
-	var fieldType *bool
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return false
-	}
-
-	b, ok := ext.(*bool)
-	if !ok {
-		return false
-	}
-
-	return *b
+	return boolExtension(fieldID, f)
 }
 
 func boolMessageExtension(fieldID int32, f *descriptorpb.DescriptorProto) bool {
-	if f == nil || f.Options == nil {
-		return false
-	}
-	var extendedType *descriptorpb.MessageOptions
-	var fieldType *bool
-
-	ext, err := getExtension(f.Options, extendedType, fieldID, fieldType)
-	if err != nil {
-		return false
-	}
-
-	b, ok := ext.(*bool)
-	if !ok {
-		return false
-	}
-
-	return *b
+	return boolExtension(fieldID, f)
 }

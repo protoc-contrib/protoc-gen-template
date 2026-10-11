@@ -3,14 +3,12 @@ package generator_test
 import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
+	"github.com/protoc-contrib/protoc-gen-template/internal/generator"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// Custom options extraction is only meaningful against descriptors produced
-// from real proto sources with matching Go stubs. Exercising the happy path
-// requires heavy fixtures, so these tests focus on the nil/absent paths that
-// user templates hit most often.
 var _ = Describe("options_ext extractors", func() {
 	It("stringMethodOptionsExtension returns empty on nil options", func() {
 		out, err := renderWithData(
@@ -93,36 +91,51 @@ var _ = Describe("options_ext extractors", func() {
 		Expect(out).To(Equal("false"))
 	})
 
-	// When Options is set but the extension fieldID isn't registered with a
-	// matching type, the registration path in getExtension runs and
-	// GetExtension returns the zero value; the type assertion on a nil
-	// pointer fails, so the extractor returns its own default.
-	It("stringMethodOptionsExtension registers unknown fieldIDs and returns empty", func() {
-		m := &descriptorpb.MethodDescriptorProto{
-			Options: &descriptorpb.MethodOptions{},
+	It("returns zero values for fieldIDs no option declares", func() {
+		out, err := renderWithData(
+			`{{ stringMethodOptionsExtension 99701 . }}|{{ boolMethodOptionsExtension 99701 . }}`,
+			&descriptorpb.MethodDescriptorProto{Options: &descriptorpb.MethodOptions{}},
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(Equal("|false"))
+	})
+
+	Context("on a request compiled by protoc", func() {
+		var tmplDir string
+
+		BeforeEach(func() {
+			tmplDir = GinkgoT().TempDir()
+		})
+
+		render := func(src string) string {
+			writeTemplate(tmplDir, "out.txt.tmpl", src)
+			plugin := optionsPlugin()
+			Expect(generator.Generate(plugin, &generator.Options{TemplateDir: tmplDir})).To(Succeed())
+			return outputByName(plugin, "out.txt")
 		}
-		// Use a high, unique fieldID so the first call registers and a second
-		// call hits the cached path.
-		out1, err := renderWithData(`{{ stringMethodOptionsExtension 99701 . }}`, m)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(out1).To(Equal(""))
 
-		out2, err := renderWithData(`{{ stringMethodOptionsExtension 99701 . }}`, m)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(out2).To(Equal(""))
-	})
+		It("reads file and method options sharing a field number", func() {
+			Expect(render(`{{ stringFileOptionsExtension 60000 .File }}|{{ stringMethodOptionsExtension 60000 (index .Service.Method 0) }}`)).
+				To(Equal("team-books|/books/{title}"))
+		})
 
-	It("boolFieldExtension registers unknown fieldIDs and returns false", func() {
-		f := &descriptorpb.FieldDescriptorProto{Options: &descriptorpb.FieldOptions{}}
-		out, err := renderWithData(`{{ boolFieldExtension 99702 . }}`, f)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(out).To(Equal("false"))
-	})
+		It("reads method options", func() {
+			Expect(render(`{{ boolMethodOptionsExtension 60002 (index .Service.Method 0) }}`)).To(Equal("true"))
+		})
 
-	It("int64MessageExtension registers unknown fieldIDs and returns 0", func() {
-		m := &descriptorpb.DescriptorProto{Options: &descriptorpb.MessageOptions{}}
-		out, err := renderWithData(`{{ int64MessageExtension 99703 . }}`, m)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(out).To(Equal("0"))
+		It("reads message options", func() {
+			Expect(render(`{{ $m := index .File.MessageType 0 }}{{ int64MessageExtension 60001 $m }}|{{ stringMessageExtension 60002 $m }}|{{ boolMessageExtension 55003 (index .File.MessageType 1) }}`)).
+				To(Equal("3600|A book.|true"))
+		})
+
+		It("reads field options", func() {
+			Expect(render(`{{ $f := index (index .File.MessageType 0).Field 5 }}{{ stringFieldExtension 60000 $f }}|{{ int64FieldExtension 60001 $f }}|{{ boolFieldExtension 60002 $f }}`)).
+				To(Equal("book_notes|280|true"))
+		})
+
+		It("returns zero values for options of another type", func() {
+			Expect(render(`{{ $f := index (index .File.MessageType 0).Field 5 }}{{ stringFieldExtension 60001 $f }}|{{ int64FieldExtension 60000 $f }}|{{ boolFieldExtension 60000 $f }}`)).
+				To(Equal("|0|false"))
+		})
 	})
 })
