@@ -125,6 +125,35 @@ var _ = Describe("generator.Generate", func() {
 		Expect(outputByName(plugin, "doc.txt")).To(Equal("pkg=demo"))
 	})
 
+	It("renders only the files to generate, not the files they import", func() {
+		writeTemplate(tmplDir, "names.txt.tmpl", "{{ .File.GetName }}\n")
+
+		plugin := newPlugin(
+			[]string{"demo.proto"},
+			fileDescProto("dep.proto", true),
+			fileDescProto("demo.proto", false),
+		)
+
+		Expect(generator.Generate(plugin, &generator.Options{
+			TemplateDir: tmplDir,
+			Mode:        generator.ModeAll,
+		})).To(Succeed())
+		Expect(outputByName(plugin, "names.txt")).To(Equal("demo.proto\n"))
+	})
+
+	It("skips services declared in imported files", func() {
+		writeTemplate(tmplDir, "names.txt.tmpl", "{{ .File.GetName }}\n")
+
+		plugin := newPlugin(
+			[]string{"demo.proto"},
+			fileDescProto("dep.proto", true),
+			fileDescProto("demo.proto", false),
+		)
+
+		Expect(generator.Generate(plugin, &generator.Options{TemplateDir: tmplDir})).To(Succeed())
+		Expect(outputNames(plugin)).To(BeEmpty())
+	})
+
 	It("renders once per file with mode=file even when the file defines multiple services", func() {
 		writeTemplate(tmplDir, "file.txt.tmpl",
 			`n={{len .File.Service}}`)
