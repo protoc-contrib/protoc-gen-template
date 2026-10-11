@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.11.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.10.0...v2.11.0) (2026-10-11)
+
+
+### Features
+
+* add include and .tpl partials ([f216a7b](https://github.com/protoc-contrib/protoc-gen-template/commit/f216a7bd6dfc93ce30dfa48b38fc597d50bde8f8)), closes [#56](https://github.com/protoc-contrib/protoc-gen-template/issues/56)
+* add rustPath, the Rust path of a message or enum ([8165069](https://github.com/protoc-contrib/protoc-gen-template/commit/8165069ab886774383626a70ca5bc598bd00401b)), closes [#57](https://github.com/protoc-contrib/protoc-gen-template/issues/57)
+* expose the file's package as a plain string, .Package ([8165069](https://github.com/protoc-contrib/protoc-gen-template/commit/8165069ab886774383626a70ca5bc598bd00401b))
+* render once per proto package or once per run ([3c5973e](https://github.com/protoc-contrib/protoc-gen-template/commit/3c5973ea899bd2630bfbbef3d9f09014984ec713)), closes [#55](https://github.com/protoc-contrib/protoc-gen-template/issues/55)
+
+
+### Bug Fixes
+
+* render only the files protoc asked to generate ([3fe28a3](https://github.com/protoc-contrib/protoc-gen-template/commit/3fe28a370acf0b89c4930575402d861848b51ddd))
+
 ## [2.10.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.9.1...v2.10.0) (2026-10-11)
 
 
