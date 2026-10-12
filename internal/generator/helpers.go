@@ -166,6 +166,7 @@ var ProtoHelpersFuncMap = template.FuncMap{
 	"rustType":                     rustType,
 	"rustTypeWithPackage":          rustTypeWithPackage,
 	"rustPath":                     rustPath,
+	"rustName":                     rustName,
 	"packages":                     packages,
 	"byPackage":                    byPackage,
 	// include is bound to its template set while rendering; this entry lets

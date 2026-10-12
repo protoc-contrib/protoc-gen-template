@@ -10,35 +10,35 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// rustFile declares, in package acme.type.v1, a message Book with a
+// nested message Chapter, which nests an enum Kind, plus a message
+// HTTPRequest and a message named Self.
+func rustFile() *descriptorpb.FileDescriptorProto {
+	f := fileDescProto("acme/type/v1/book.proto", false)
+	f.Package = proto.String("acme.type.v1")
+	f.MessageType = []*descriptorpb.DescriptorProto{
+		{
+			Name: proto.String("Book"),
+			NestedType: []*descriptorpb.DescriptorProto{{
+				Name: proto.String("Chapter"),
+				EnumType: []*descriptorpb.EnumDescriptorProto{{
+					Name:  proto.String("Kind"),
+					Value: []*descriptorpb.EnumValueDescriptorProto{{Name: proto.String("KIND_UNSPECIFIED"), Number: proto.Int32(0)}},
+				}},
+			}},
+		},
+		{Name: proto.String("HTTPRequest")},
+		{Name: proto.String("Self")},
+	}
+	return f
+}
+
 var _ = Describe("rustPath", func() {
 	var tmplDir string
 
 	BeforeEach(func() {
 		tmplDir = GinkgoT().TempDir()
 	})
-
-	// rustFile declares, in package acme.type.v1, a message Book with a
-	// nested message Chapter, which nests an enum Kind, plus a message
-	// HTTPRequest and a message named Self.
-	rustFile := func() *descriptorpb.FileDescriptorProto {
-		f := fileDescProto("acme/type/v1/book.proto", false)
-		f.Package = proto.String("acme.type.v1")
-		f.MessageType = []*descriptorpb.DescriptorProto{
-			{
-				Name: proto.String("Book"),
-				NestedType: []*descriptorpb.DescriptorProto{{
-					Name: proto.String("Chapter"),
-					EnumType: []*descriptorpb.EnumDescriptorProto{{
-						Name:  proto.String("Kind"),
-						Value: []*descriptorpb.EnumValueDescriptorProto{{Name: proto.String("KIND_UNSPECIFIED"), Number: proto.Int32(0)}},
-					}},
-				}},
-			},
-			{Name: proto.String("HTTPRequest")},
-			{Name: proto.String("Self")},
-		}
-		return f
-	}
 
 	// render generates the last file; the others are its imports, which
 	// protoc lists first.
@@ -102,6 +102,51 @@ var _ = Describe("rustPath", func() {
 	It("fails on a name that isn't a message or an enum", func() {
 		_, err := render(`{{ rustPath "crate" ".acme.type.v1.Book.Chapter.KIND_UNSPECIFIED" }}`, rustFile())
 		Expect(err).To(MatchError(ContainSubstring("is not a message or an enum")))
+	})
+})
+
+var _ = Describe("rustName", func() {
+	var tmplDir string
+
+	BeforeEach(func() {
+		tmplDir = GinkgoT().TempDir()
+	})
+
+	render := func(src string) (string, error) {
+		writeTemplate(tmplDir, "out.txt.tmpl", src)
+		f := rustFile()
+		plugin := newPlugin([]string{f.GetName()}, f)
+		if err := generator.Generate(plugin, &generator.Options{TemplateDir: tmplDir, Mode: generator.ModeAll}); err != nil {
+			return "", err
+		}
+		return outputByName(plugin, "out.txt"), nil
+	}
+
+	DescribeTable("maps a type name to its Rust path within its package",
+		func(name, want string) {
+			Expect(render(`{{ rustName "` + name + `" }}`)).To(Equal(want))
+		},
+		Entry("a top-level message", ".acme.type.v1.Book", "Book"),
+		Entry("a nested message", ".acme.type.v1.Book.Chapter", "book::Chapter"),
+		Entry("a doubly nested enum", ".acme.type.v1.Book.Chapter.Kind", "book::chapter::Kind"),
+		Entry("an acronym", ".acme.type.v1.HTTPRequest", "HttpRequest"),
+		Entry("a name a raw identifier can't spell", ".acme.type.v1.Self", "Self_"),
+		Entry("a name without the leading dot", "acme.type.v1.Book", "Book"),
+	)
+
+	It("names each top-level message of the package", func() {
+		Expect(render(`{{ range .File.MessageType }}{{ rustName (printf ".%s.%s" $.Package .GetName) }} {{ end }}`)).
+			To(Equal("Book HttpRequest Self_ "))
+	})
+
+	It("fails on a name that isn't a type in the request", func() {
+		_, err := render(`{{ rustName ".acme.type.v1.Missing" }}`)
+		Expect(err).To(MatchError(ContainSubstring(`rustName: ".acme.type.v1.Missing" is not a type in the request`)))
+	})
+
+	It("fails on a name that isn't a message or an enum", func() {
+		_, err := render(`{{ rustName ".acme.type.v1.Book.Chapter.KIND_UNSPECIFIED" }}`)
+		Expect(err).To(MatchError(ContainSubstring("rustName: \".acme.type.v1.Book.Chapter.KIND_UNSPECIFIED\" is not a message or an enum")))
 	})
 })
 

@@ -28,14 +28,9 @@ var rustKeywords = map[string]bool{
 // generated code: one module per package segment, and a snake_case module per
 // parent message.
 func rustPath(root, name string) (string, error) {
-	desc, err := requestFiles.FindDescriptorByName(protoreflect.FullName(strings.TrimPrefix(name, ".")))
+	desc, err := rustDescriptor("rustPath", name)
 	if err != nil {
-		return "", fmt.Errorf("rustPath: %q is not a type in the request: %w", name, err)
-	}
-	switch desc.(type) {
-	case protoreflect.MessageDescriptor, protoreflect.EnumDescriptor:
-	default:
-		return "", fmt.Errorf("rustPath: %q is not a message or an enum", name)
+		return "", err
 	}
 
 	var segments []string
@@ -48,6 +43,38 @@ func rustPath(root, name string) (string, error) {
 		}
 	}
 
+	return strings.Join(append(segments, rustNameSegments(desc)...), "::"), nil
+}
+
+// rustName returns the Rust path of the message or enum name within its
+// package's module, e.g. ".acme.v1.Book.Format" is "book::Format": how code
+// in that module names it, such as a file the module includes.
+func rustName(name string) (string, error) {
+	desc, err := rustDescriptor("rustName", name)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(rustNameSegments(desc), "::"), nil
+}
+
+// rustDescriptor resolves name, with or without its leading dot, to the
+// message or enum it names in the request.
+func rustDescriptor(helper, name string) (protoreflect.Descriptor, error) {
+	desc, err := requestFiles.FindDescriptorByName(protoreflect.FullName(strings.TrimPrefix(name, ".")))
+	if err != nil {
+		return nil, fmt.Errorf("%s: %q is not a type in the request: %w", helper, name, err)
+	}
+	switch desc.(type) {
+	case protoreflect.MessageDescriptor, protoreflect.EnumDescriptor:
+	default:
+		return nil, fmt.Errorf("%s: %q is not a message or an enum", helper, name)
+	}
+	return desc, nil
+}
+
+// rustNameSegments returns the path of desc below its package: a snake_case
+// module per parent message, then the type's own name.
+func rustNameSegments(desc protoreflect.Descriptor) []string {
 	var parents []string
 	for parent := desc.Parent(); parent != nil; parent = parent.Parent() {
 		if _, ok := parent.(protoreflect.MessageDescriptor); !ok {
@@ -55,11 +82,12 @@ func rustPath(root, name string) (string, error) {
 		}
 		parents = append(parents, rustModule(string(parent.Name())))
 	}
+
+	segments := make([]string, 0, len(parents)+1)
 	for i := len(parents) - 1; i >= 0; i-- {
 		segments = append(segments, parents[i])
 	}
-
-	return strings.Join(append(segments, rustTypeName(string(desc.Name()))), "::"), nil
+	return append(segments, rustTypeName(string(desc.Name())))
 }
 
 func rustModule(name string) string {

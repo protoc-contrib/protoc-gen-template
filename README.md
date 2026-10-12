@@ -206,6 +206,16 @@ escaped (`type` becomes `r#type`). The name must be a type in the request;
 well-known types such as `google.protobuf.Timestamp` resolve under `root`
 too, not to an external crate.
 
+`rustName name` is the same path within the type's own package, for code
+that sits in the package's module, such as a file it includes:
+
+```
+impl SetDefaults for {{ rustName (printf ".%s.%s" .Package .GetName) }} {
+```
+
+`.acme.v1.CreateBookRequest` becomes `CreateBookRequest`, and
+`.acme.v1.Book.Format` becomes `book::Format`.
+
 ## Partials and include
 
 A `.tpl` file under `template_dir` is a partial: it is never rendered as
