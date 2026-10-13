@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.11.0...v2.12.0) (2026-10-13)
+
+
+### Features
+
+* add rustName, the Rust path of a type within its package ([751911d](https://github.com/protoc-contrib/protoc-gen-template/commit/751911d2e1ca8e636a0d310c3a3edacf9b48f86a))
+
 ## [2.11.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.10.0...v2.11.0) (2026-10-11)
 
 
