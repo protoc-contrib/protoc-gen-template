@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.12.0...v2.13.0) (2026-11-07)
+
+
+### Features
+
+* **ci:** push the Nix build to Cachix, and merge with the App token ([#76](https://github.com/protoc-contrib/protoc-gen-template/issues/76)) ([294b0f7](https://github.com/protoc-contrib/protoc-gen-template/commit/294b0f737bc4d41a6cd99de78f86e76dcaaa2365))
+
 ## [2.12.0](https://github.com/protoc-contrib/protoc-gen-template/compare/v2.11.0...v2.12.0) (2026-10-13)
 
 
